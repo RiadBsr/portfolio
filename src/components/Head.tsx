@@ -215,10 +215,12 @@ export function Model(props: JSX.IntrinsicElements['group']) {
         hasGyro.current = true
         // e.beta (front-to-back tilt): typical holding range is ~20 (flat) to ~90 (upright)
         // Normalize 45deg as "center" (0), mapped roughly from -30 to 30 deg deflection
-        let normalizedBeta = (e.beta - 45) / 30
+        // Negated to invert up/down
+        let normalizedBeta = -((e.beta - 45) / 30)
 
         // e.gamma (left-to-right tilt): range is -90 to 90. We care about -30 to 30 mostly.
-        let normalizedGamma = e.gamma / 30
+        // Negated to invert left/right
+        let normalizedGamma = -(e.gamma / 30)
 
         // Clamp to [-1, 1] range to match R3F state.pointer behavior
         simulatedPointer.current.y = Math.max(-1, Math.min(1, normalizedBeta)) // pitch
