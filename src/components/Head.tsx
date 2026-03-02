@@ -205,6 +205,35 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   const eyeLRestQuat = React.useRef(new THREE.Quaternion())
   const eyeRRestQuat = React.useRef(new THREE.Quaternion())
 
+  // Hardware Gyroscope tracking for Mobile
+  const simulatedPointer = React.useRef({ x: 0, y: 0 })
+  const hasGyro = React.useRef(false)
+
+  React.useEffect(() => {
+    const handleOrientation = (e: DeviceOrientationEvent) => {
+      if (e.beta !== null && e.gamma !== null) {
+        hasGyro.current = true
+        // e.beta (front-to-back tilt): typical holding range is ~20 (flat) to ~90 (upright)
+        // Normalize 45deg as "center" (0), mapped roughly from -30 to 30 deg deflection
+        let normalizedBeta = (e.beta - 45) / 30
+
+        // e.gamma (left-to-right tilt): range is -90 to 90. We care about -30 to 30 mostly.
+        let normalizedGamma = e.gamma / 30
+
+        // Clamp to [-1, 1] range to match R3F state.pointer behavior
+        simulatedPointer.current.y = Math.max(-1, Math.min(1, normalizedBeta)) // pitch
+        simulatedPointer.current.x = Math.max(-1, Math.min(1, normalizedGamma)) // yaw
+      }
+    }
+
+    // Only add listener if we're in a secure context (HTTPS/localhost) which is required for gyroscope
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientation', handleOrientation)
+    }
+
+    return () => window.removeEventListener('deviceorientation', handleOrientation)
+  }, [])
+
   // Manual animation mixer
   const mixerRef = React.useRef<THREE.AnimationMixer | null>(null)
   const blinkActionRef = React.useRef<THREE.AnimationAction | null>(null)
@@ -275,6 +304,10 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     // Determine if mobile (for looking ranges)
     const isMobile = window.innerWidth < 768
 
+    // Use gyroscope input if available, otherwise fallback to mouse/cursor position
+    const pointerX = (isMobile && hasGyro.current) ? simulatedPointer.current.x : state.pointer.x
+    const pointerY = (isMobile && hasGyro.current) ? simulatedPointer.current.y : -state.pointer.y
+
     // Head: subtle, slow movement
     const maxHeadRotY = isMobile ? Math.PI / 15 : Math.PI / 6   // Desktop: more horiz, Mobile: less horiz
     const maxHeadRotX = isMobile ? Math.PI / 6 : Math.PI / 6   // Desktop: less vert, Mobile: more vert
@@ -283,7 +316,7 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     const maxEyeRotX = isMobile ? Math.PI / 12 : Math.PI / 12
 
     if (headBone) {
-      dummyHead.rotation.set(-state.pointer.y * maxHeadRotX, state.pointer.x * maxHeadRotY, 0)
+      dummyHead.rotation.set(pointerY * maxHeadRotX, pointerX * maxHeadRotY, 0)
       dummyHead.updateMatrix()
       dampQ(headBone.quaternion, dummyHead.quaternion, 0.25, delta)
     }
@@ -291,14 +324,14 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     // Eye rotation = restQuat * trackingRotation
     // Axes: X = up/down (flip sign), Z = left/right
     if (eyeL) {
-      dummyEyeL.rotation.set(state.pointer.y * maxEyeRotX, 0, state.pointer.x * maxEyeRotY)
+      dummyEyeL.rotation.set(-pointerY * maxEyeRotX, 0, pointerX * maxEyeRotY)
       dummyEyeL.updateMatrix()
       const targetQ = eyeLRestQuat.current.clone().multiply(dummyEyeL.quaternion)
       dampQ(eyeL.quaternion, targetQ, 0.08, delta)
     }
 
     if (eyeR) {
-      dummyEyeR.rotation.set(state.pointer.y * maxEyeRotX, 0, state.pointer.x * maxEyeRotY)
+      dummyEyeR.rotation.set(-pointerY * maxEyeRotX, 0, pointerX * maxEyeRotY)
       dummyEyeR.updateMatrix()
       const targetQ = eyeRRestQuat.current.clone().multiply(dummyEyeR.quaternion)
       dampQ(eyeR.quaternion, targetQ, 0.08, delta)
