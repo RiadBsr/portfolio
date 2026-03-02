@@ -210,25 +210,54 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   // Hardware Gyroscope tracking for Mobile
   const simulatedPointer = React.useRef({ x: 0, y: 0 })
   const hasGyro = React.useRef(false)
+  // Store the initial device orientation so all rotations are relative to how
+  // the user was holding the phone at page load (works upright, flat, inverted, etc.)
+  const initialOrientation = React.useRef<{ beta: number; gamma: number; alpha: number } | null>(null)
+  const calibrationSamples = React.useRef<{ beta: number; gamma: number }[]>([])
+  const CALIBRATION_COUNT = 5 // average the first N readings for a stable baseline
 
   React.useEffect(() => {
     const handleOrientation = (e: DeviceOrientationEvent) => {
-      if (e.beta !== null && e.gamma !== null) {
-        hasGyro.current = true
-        // e.beta (front-to-back tilt): typical holding range is ~20 (flat) to ~90 (upright)
-        // Normalize 45deg as "center" (0), mapped roughly from -30 to 30 deg deflection
-        let normalizedBeta = (e.beta - 45) / 30
+      if (e.beta === null || e.gamma === null) return
 
-        // e.gamma (left-to-right tilt): range is -90 to 90. We care about -30 to 30 mostly.
-        let normalizedGamma = e.gamma / 30
+      // --- Calibration: capture an initial baseline from the first few events ---
+      if (initialOrientation.current === null) {
+        calibrationSamples.current.push({ beta: e.beta, gamma: e.gamma })
 
-        // Clamp to [-1, 1] range to match R3F state.pointer behavior
-        simulatedPointer.current.y = Math.max(-1, Math.min(1, normalizedBeta)) // pitch
-        simulatedPointer.current.x = Math.max(-1, Math.min(1, normalizedGamma)) // yaw
+        if (calibrationSamples.current.length >= CALIBRATION_COUNT) {
+          const avgBeta =
+            calibrationSamples.current.reduce((s, v) => s + v.beta, 0) / CALIBRATION_COUNT
+          const avgGamma =
+            calibrationSamples.current.reduce((s, v) => s + v.gamma, 0) / CALIBRATION_COUNT
+
+          initialOrientation.current = {
+            beta: avgBeta,
+            gamma: avgGamma,
+            alpha: e.alpha ?? 0,
+          }
+        }
+        return // skip rendering until calibrated
       }
+
+      hasGyro.current = true
+
+      // Compute rotation delta from the initial orientation
+      let deltaBeta = e.beta - initialOrientation.current.beta
+      let deltaGamma = e.gamma - initialOrientation.current.gamma
+
+      // Handle gamma wrap-around near ±90° (phone flipping over)
+      if (deltaGamma > 90) deltaGamma -= 180
+      if (deltaGamma < -90) deltaGamma += 180
+
+      // Normalize: ±30° deflection from initial position maps to [-1, 1]
+      const normalizedBeta = deltaBeta / 30
+      const normalizedGamma = deltaGamma / 30
+
+      // Clamp to [-1, 1] range to match R3F state.pointer behavior
+      simulatedPointer.current.y = Math.max(-1, Math.min(1, normalizedBeta))  // pitch
+      simulatedPointer.current.x = Math.max(-1, Math.min(1, normalizedGamma)) // yaw
     }
 
-    // Only add listener if we're in a secure context (HTTPS/localhost) which is required for gyroscope
     if (window.DeviceOrientationEvent) {
       window.addEventListener('deviceorientation', handleOrientation)
     }
