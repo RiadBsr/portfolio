@@ -59,7 +59,8 @@ function createSharpEdgeGeometry(geometry: THREE.BufferGeometry) {
 // Custom Material that renders lines but natively supports Skeletal Animation
 const edgeMaterial = new THREE.ShaderMaterial({
   uniforms: {
-    color: { value: new THREE.Color(0x000000) }
+    color: { value: new THREE.Color(0x000000) },
+    opacity: { value: 0.4 } // Lowering opacity makes 1px lines visually appear "thinner"
   },
   vertexShader: `
     #include <common>
@@ -73,8 +74,9 @@ const edgeMaterial = new THREE.ShaderMaterial({
   `,
   fragmentShader: `
     uniform vec3 color;
+    uniform float opacity;
     void main() {
-      gl_FragColor = vec4(color, 1.0);
+      gl_FragColor = vec4(color, opacity);
     }
   `,
   transparent: true,
