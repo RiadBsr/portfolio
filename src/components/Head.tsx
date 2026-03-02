@@ -14,6 +14,74 @@ const dummyHead = new THREE.Object3D()
 const dummyEyeL = new THREE.Object3D()
 const dummyEyeR = new THREE.Object3D()
 
+// Helpers to extract sharp edges exclusively (relies on split vertices from Blender's Edge Split output)
+function createSharpEdgeGeometry(geometry: THREE.BufferGeometry) {
+  const index = geometry.index?.array
+  if (!index) return null
+
+  const edgeCount = new Map<string, number>()
+
+  // Count edge occurrences (unordered integer pairs)
+  for (let i = 0; i < index.length; i += 3) {
+    const a = index[i]
+    const b = index[i + 1]
+    const c = index[i + 2]
+
+    for (const [u, v] of [[a, b], [b, c], [c, a]]) {
+      const key = u < v ? `${u}_${v}` : `${v}_${u}`
+      edgeCount.set(key, (edgeCount.get(key) || 0) + 1)
+    }
+  }
+
+  const lineIndices: number[] = []
+  for (const [key, count] of edgeCount.entries()) {
+    if (count === 1) { // Appears exactly once -> it's a split/hard edge or mesh boundary!
+      const [u, v] = key.split('_').map(Number)
+      lineIndices.push(u, v)
+    }
+  }
+
+  if (lineIndices.length === 0) return null
+
+  const linesGeo = new THREE.BufferGeometry()
+  linesGeo.setAttribute('position', geometry.getAttribute('position'))
+  if (geometry.getAttribute('skinIndex')) {
+    linesGeo.setAttribute('skinIndex', geometry.getAttribute('skinIndex'))
+  }
+  if (geometry.getAttribute('skinWeight')) {
+    linesGeo.setAttribute('skinWeight', geometry.getAttribute('skinWeight'))
+  }
+  linesGeo.setIndex(lineIndices)
+
+  return linesGeo
+}
+
+// Custom Material that renders lines but natively supports Skeletal Animation
+const edgeMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    color: { value: new THREE.Color(0x000000) }
+  },
+  vertexShader: `
+    #include <common>
+    #include <skinning_pars_vertex>
+    void main() {
+      #include <skinbase_vertex>
+      #include <begin_vertex>
+      #include <skinning_vertex>
+      #include <project_vertex>
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 color;
+    void main() {
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `,
+  transparent: true,
+  depthTest: true,
+  depthWrite: false,
+})
+
 export function Model(props: JSX.IntrinsicElements['group']) {
   const gltf = useGLTF('/models/head.glb')
 
@@ -26,7 +94,14 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     const bones: THREE.Bone[] = []
 
     // Flat black material — unlit, no shading, cartoon-like pure black
-    const flatBlack = new THREE.MeshBasicMaterial({ color: 0x000000 })
+    // Use polygonOffset to push the mesh slightly back in the depth buffer,
+    // so the wireframe lines perfectly sit on top without Z-fighting or bleed-through from the back
+    const flatBlack = new THREE.MeshBasicMaterial({
+      color: 0x000000,
+      polygonOffset: true,
+      polygonOffsetFactor: 1,
+      polygonOffsetUnits: 1
+    })
 
     cloned.traverse((node) => {
       // Disable frustum culling + enable shadows
@@ -35,8 +110,24 @@ export function Model(props: JSX.IntrinsicElements['group']) {
         node.castShadow = true
         node.receiveShadow = true
 
-        // Replace "Black" material with flat unlit black
         const mesh = node as THREE.Mesh
+
+        // Apply polygonOffset to existing materials (like the white parts) so they also sit back
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(mat => {
+            mat.polygonOffset = true
+            mat.polygonOffsetFactor = 1
+            mat.polygonOffsetUnits = 1
+            mat.needsUpdate = true
+          })
+        } else if (mesh.material) {
+          mesh.material.polygonOffset = true
+          mesh.material.polygonOffsetFactor = 1
+          mesh.material.polygonOffsetUnits = 1
+          mesh.material.needsUpdate = true
+        }
+
+        // Replace "Black" material with flat unlit black
         if (Array.isArray(mesh.material)) {
           mesh.material = mesh.material.map((mat) =>
             mat.name === 'Black' ? flatBlack : mat
@@ -61,10 +152,49 @@ export function Model(props: JSX.IntrinsicElements['group']) {
       })
       mesh.skeleton = new THREE.Skeleton(newBones)
       mesh.bind(mesh.skeleton)
+
+      // Add blueprint-style wireframe overlay for sharp edges (excluding eyelashes)
+      if (!mesh.name.toLowerCase().includes('eyelash')) {
+        const linesGeo = createSharpEdgeGeometry(mesh.geometry)
+        if (linesGeo) {
+          const lines = new THREE.LineSegments(linesGeo, edgeMaterial)
+
+            // Duck-type as a SkinnedMesh so WebGLRenderer will inject and upload bone matrices
+            ; (lines as any).isSkinnedMesh = true
+            ; (lines as any).skeleton = mesh.skeleton
+            ; (lines as any).bindMatrix = mesh.bindMatrix
+            ; (lines as any).bindMatrixInverse = mesh.bindMatrixInverse
+
+          if (mesh.parent) {
+            mesh.parent.add(lines)
+            lines.position.copy(mesh.position)
+            lines.quaternion.copy(mesh.quaternion)
+            lines.scale.copy(mesh.scale)
+          }
+        }
+      }
     }
 
     return cloned
   }, [gltf.scene])
+
+  // Disable eyelashes on mobile for performance (skips rendering)
+  React.useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth < 768
+      clone.traverse((node) => {
+        if (node.name.toLowerCase().includes('eyelash')) {
+          node.visible = !isMobile
+        }
+      })
+    }
+
+    // Initial check
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [clone])
 
   // Cache bone references
   const headBoneRef = React.useRef<THREE.Object3D | null>(null)
@@ -142,12 +272,15 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     const eyeL = eyeLBoneRef.current
     const eyeR = eyeRBoneRef.current
 
+    // Determine if mobile (for looking ranges)
+    const isMobile = window.innerWidth < 768
+
     // Head: subtle, slow movement
-    const maxHeadRotY = Math.PI / 6   // ~15 deg left/right
-    const maxHeadRotX = Math.PI / 6   // ~12 deg up/down
+    const maxHeadRotY = isMobile ? Math.PI / 15 : Math.PI / 6   // Desktop: more horiz, Mobile: less horiz
+    const maxHeadRotX = isMobile ? Math.PI / 6 : Math.PI / 6   // Desktop: less vert, Mobile: more vert
     // Eyes: wider, snappier response
-    const maxEyeRotY = Math.PI / 6     // ~45 deg left/right
-    const maxEyeRotX = Math.PI / 12     // ~36 deg up/down
+    const maxEyeRotY = isMobile ? Math.PI / 12 : Math.PI / 6
+    const maxEyeRotX = isMobile ? Math.PI / 12 : Math.PI / 12
 
     if (headBone) {
       dummyHead.rotation.set(-state.pointer.y * maxHeadRotX, state.pointer.x * maxHeadRotY, 0)
