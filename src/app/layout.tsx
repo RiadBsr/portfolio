@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Riad Bsr — Portfolio",
-  description: "Interactive 3D portfolio showcasing creative development work",
+  title: "Riad Boussoura — Portfolio",
+  description: "A showcase of my work and projects.",
 };
 
 export default function RootLayout({

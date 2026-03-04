@@ -52,7 +52,7 @@ export default function Home() {
       {/* Basic UI Overlay to test Zustand state later */}
       <div style={{ position: "absolute", top: 40, left: 40, zIndex: 10 }}>
         <h1 style={{ fontSize: "2rem", margin: 0, fontWeight: "bold" }}>Portfolio</h1>
-        <p style={{ opacity: 0.7 }}>Interactive 3D Head Model</p>
+        <p style={{ opacity: 0.7 }}>Work in progress</p>
       </div>
     </main>
   );
