@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback, useRef } from 'react'
 import { Html } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { useStore } from '@/store/useStore'
 import * as THREE from 'three'
 
@@ -13,6 +13,7 @@ const ANNOTATIONS = [
     label: 'NEURAL MESH',
     detail: 'Skeletal wireframe extracted from skinned geometry boundary edges',
     delay: '0s',
+    flip: false,
   },
   {
     id: 'edges',
@@ -20,6 +21,7 @@ const ANNOTATIONS = [
     label: 'EDGE DETECT',
     detail: 'Sharp edges rendered via custom skinning shader on LineSegments',
     delay: '0.1s',
+    flip: true,
   },
   {
     id: 'rig',
@@ -27,6 +29,7 @@ const ANNOTATIONS = [
     label: 'BONE RIG',
     detail: 'Quaternion-damped bone tracking for gaze and blink animation',
     delay: '0.2s',
+    flip: false,
   },
 ]
 
@@ -37,12 +40,9 @@ const LINE_COLLAPSED = 28
 const LINE_EXPANDED = 64
 const LINE_MOBILE = 18
 
-// Shared invisible material for hover hitboxes
-const invisibleMat = new THREE.MeshBasicMaterial({ visible: false })
-const hitboxGeo = new THREE.SphereGeometry(0.06, 8, 8)
-
-// Reusable vector for projection
-const _vec3 = new THREE.Vector3()
+// Shared invisible material and geometry for hover hitboxes (allocated once)
+const invisibleMat = /* @__PURE__ */ new THREE.MeshBasicMaterial({ visible: false })
+const hitboxGeo = /* @__PURE__ */ new THREE.SphereGeometry(0.06, 8, 8)
 
 function AnnotationItem({
   ann,
@@ -54,21 +54,14 @@ function AnnotationItem({
   isMobile: boolean
 }) {
   const [hovered, setHovered] = useState(false)
-  const [flip, setFlip] = useState(false)
   const revealed = useRef(false)
 
   const onOver = useCallback(() => setHovered(true), [])
   const onOut = useCallback(() => setHovered(false), [])
   const onAnimEnd = useCallback(() => { revealed.current = true }, [])
 
-  // Auto-flip: project annotation position to screen, flip if on left half
-  useFrame(({ camera }) => {
-    _vec3.set(ann.pos[0], ann.pos[1], ann.pos[2]).project(camera)
-    const shouldFlip = _vec3.x < -0.05
-    if (shouldFlip !== flip) setFlip(shouldFlip)
-  })
-
   const lineW = isMobile ? LINE_MOBILE : (hovered ? LINE_EXPANDED : LINE_COLLAPSED)
+  const flip = ann.flip
 
   return (
     <>
@@ -129,14 +122,13 @@ function AnnotationItem({
                   y2="0"
                   stroke="rgba(255,255,255,0.2)"
                   strokeWidth="0.8"
-                  style={{ transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)' }}
                 />
                 <circle
                   cx={flip ? lineW : 0}
                   cy="0"
                   r={isMobile ? 1.5 : 1.8}
                   fill={hovered ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)'}
-                  style={{ transition: 'fill 0.3s ease, cx 0.4s cubic-bezier(0.22,1,0.36,1)' }}
+                  style={{ transition: 'fill 0.3s ease' }}
                 />
               </svg>
               <span

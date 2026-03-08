@@ -47,8 +47,8 @@ export default function Home() {
           intensity={30}
           distance={50}
           castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
+          shadow-mapSize-width={512}
+          shadow-mapSize-height={512}
           shadow-bias={-0.0001}
           color="#ffffff"
         />
