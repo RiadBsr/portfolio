@@ -9,10 +9,13 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { dampQ } from 'maath/easing'
 
-// Dummy objects for computing target quaternions
+// Dummy objects for computing target quaternions (allocated once, reused every frame)
 const dummyHead = new THREE.Object3D()
 const dummyEyeL = new THREE.Object3D()
 const dummyEyeR = new THREE.Object3D()
+// Pre-allocated quaternions for eye tracking — avoids .clone() allocation every frame
+const _eyeLTargetQ = new THREE.Quaternion()
+const _eyeRTargetQ = new THREE.Quaternion()
 
 // Helpers to extract sharp edges exclusively (relies on split vertices from Blender's Edge Split output)
 function createSharpEdgeGeometry(geometry: THREE.BufferGeometry) {
@@ -180,32 +183,45 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     return cloned
   }, [gltf.scene])
 
-  // Disable eyelashes on mobile for performance (skips rendering)
-  React.useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth < 768
-      clone.traverse((node) => {
-        if (node.name.toLowerCase().includes('eyelash')) {
-          node.visible = !isMobile
-        }
-      })
-    }
+  // Cached isMobile flag — updated via resize listener, read every frame without DOM access
+  const isMobileRef = React.useRef(false)
 
-    // Initial check
-    handleResize()
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
+  // Collect eyelash nodes once for fast toggle (avoids traverse on every resize)
+  const eyelashNodes = React.useMemo(() => {
+    const nodes: THREE.Object3D[] = []
+    clone.traverse((node) => {
+      if (node.name.toLowerCase().includes('eyelash')) nodes.push(node)
+    })
+    return nodes
   }, [clone])
 
-  // Cache bone references
+  // Disable eyelashes on mobile for performance + cache isMobile
+  React.useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768
+      isMobileRef.current = mobile
+      for (const node of eyelashNodes) node.visible = !mobile
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [eyelashNodes])
+
+  // Resolve bone references once via getObjectByName (no traverse)
   const headBoneRef = React.useRef<THREE.Object3D | null>(null)
   const eyeLBoneRef = React.useRef<THREE.Object3D | null>(null)
   const eyeRBoneRef = React.useRef<THREE.Object3D | null>(null)
-  const bonesFound = React.useRef(false)
-  // Store rest quaternions so we compose rotation on top of them
   const eyeLRestQuat = React.useRef(new THREE.Quaternion())
   const eyeRRestQuat = React.useRef(new THREE.Quaternion())
+
+  React.useEffect(() => {
+    headBoneRef.current = clone.getObjectByName('Head') ?? null
+    eyeLBoneRef.current = clone.getObjectByName('eyeL001') ?? null
+    eyeRBoneRef.current = clone.getObjectByName('eyeR001') ?? null
+    // Save rest quaternions before we start modifying them
+    if (eyeLBoneRef.current) eyeLRestQuat.current.copy(eyeLBoneRef.current.quaternion)
+    if (eyeRBoneRef.current) eyeRRestQuat.current.copy(eyeRBoneRef.current.quaternion)
+  }, [clone])
 
   // Hardware Gyroscope tracking for Mobile
   const simulatedPointer = React.useRef({ x: 0, y: 0 })
@@ -286,36 +302,21 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   useFrame((state, delta) => {
     mixerRef.current?.update(delta)
 
-    // Lazy discovery — use custom eye bones
-    if (!bonesFound.current) {
-      clone.traverse((child) => {
-        if (child.name === 'Head') headBoneRef.current = child
-        if (child.name === 'eyeL001') eyeLBoneRef.current = child
-        if (child.name === 'eyeR001') eyeRBoneRef.current = child
-      })
-      // Save rest quaternions before we start modifying them
-      if (eyeLBoneRef.current) eyeLRestQuat.current.copy(eyeLBoneRef.current.quaternion)
-      if (eyeRBoneRef.current) eyeRRestQuat.current.copy(eyeRBoneRef.current.quaternion)
-      bonesFound.current = true
-    }
-
     const headBone = headBoneRef.current
     const eyeL = eyeLBoneRef.current
     const eyeR = eyeRBoneRef.current
-
-    // Determine if mobile (for looking ranges)
-    const isMobile = window.innerWidth < 768
+    const isMobile = isMobileRef.current
 
     // Use gyroscope input if available, otherwise fallback to mouse/cursor position
     const pointerX = (isMobile && hasGyro.current) ? simulatedPointer.current.x : state.pointer.x
     const pointerY = (isMobile && hasGyro.current) ? simulatedPointer.current.y : -state.pointer.y
 
     // Head: subtle, slow movement
-    const maxHeadRotY = isMobile ? Math.PI / 15 : Math.PI / 6   // Desktop: more horiz, Mobile: less horiz
-    const maxHeadRotX = isMobile ? Math.PI / 6 : Math.PI / 6   // Desktop: less vert, Mobile: more vert
+    const maxHeadRotY = isMobile ? Math.PI / 15 : Math.PI / 6
+    const maxHeadRotX = Math.PI / 6
     // Eyes: wider, snappier response
     const maxEyeRotY = isMobile ? Math.PI / 12 : Math.PI / 6
-    const maxEyeRotX = isMobile ? Math.PI / 12 : Math.PI / 12
+    const maxEyeRotX = Math.PI / 12
 
     if (headBone) {
       dummyHead.rotation.set(pointerY * maxHeadRotX, pointerX * maxHeadRotY, 0)
@@ -328,15 +329,15 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     if (eyeL) {
       dummyEyeL.rotation.set(-pointerY * maxEyeRotX, 0, pointerX * maxEyeRotY)
       dummyEyeL.updateMatrix()
-      const targetQ = eyeLRestQuat.current.clone().multiply(dummyEyeL.quaternion)
-      dampQ(eyeL.quaternion, targetQ, 0.08, delta)
+      _eyeLTargetQ.copy(eyeLRestQuat.current).multiply(dummyEyeL.quaternion)
+      dampQ(eyeL.quaternion, _eyeLTargetQ, 0.08, delta)
     }
 
     if (eyeR) {
       dummyEyeR.rotation.set(-pointerY * maxEyeRotX, 0, pointerX * maxEyeRotY)
       dummyEyeR.updateMatrix()
-      const targetQ = eyeRRestQuat.current.clone().multiply(dummyEyeR.quaternion)
-      dampQ(eyeR.quaternion, targetQ, 0.08, delta)
+      _eyeRTargetQ.copy(eyeRRestQuat.current).multiply(dummyEyeR.quaternion)
+      dampQ(eyeR.quaternion, _eyeRTargetQ, 0.08, delta)
     }
   })
 

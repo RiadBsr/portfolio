@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback, useRef } from 'react'
 import { Html } from '@react-three/drei'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber'
 import { useStore } from '@/store/useStore'
 import * as THREE from 'three'
 
@@ -37,12 +37,9 @@ const LINE_COLLAPSED = 28
 const LINE_EXPANDED = 64
 const LINE_MOBILE = 18
 
-// Shared invisible material for hover hitboxes
-const invisibleMat = new THREE.MeshBasicMaterial({ visible: false })
-const hitboxGeo = new THREE.SphereGeometry(0.06, 8, 8)
-
-// Reusable vector for projection
-const _vec3 = new THREE.Vector3()
+// Shared invisible material and geometry for hover hitboxes (allocated once)
+const invisibleMat = /* @__PURE__ */ new THREE.MeshBasicMaterial({ visible: false })
+const hitboxGeo = /* @__PURE__ */ new THREE.SphereGeometry(0.06, 8, 8)
 
 function AnnotationItem({
   ann,
@@ -54,19 +51,11 @@ function AnnotationItem({
   isMobile: boolean
 }) {
   const [hovered, setHovered] = useState(false)
-  const [flip, setFlip] = useState(false)
   const revealed = useRef(false)
 
   const onOver = useCallback(() => setHovered(true), [])
   const onOut = useCallback(() => setHovered(false), [])
   const onAnimEnd = useCallback(() => { revealed.current = true }, [])
-
-  // Auto-flip: project annotation position to screen, flip if on left half
-  useFrame(({ camera }) => {
-    _vec3.set(ann.pos[0], ann.pos[1], ann.pos[2]).project(camera)
-    const shouldFlip = _vec3.x < -0.05
-    if (shouldFlip !== flip) setFlip(shouldFlip)
-  })
 
   const lineW = isMobile ? LINE_MOBILE : (hovered ? LINE_EXPANDED : LINE_COLLAPSED)
 
@@ -89,13 +78,12 @@ function AnnotationItem({
             onAnimationEnd={onAnimEnd}
             style={{
               position: 'absolute',
-              left: flip ? 'auto' : '0px',
-              right: flip ? '0px' : 'auto',
+              left: '0px',
               top: '0px',
               transform: 'translateY(-50%)',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: flip ? 'flex-end' : 'flex-start',
+              alignItems: 'flex-start',
               pointerEvents: 'none',
               opacity: revealed.current ? opacity : undefined,
               animation: revealed.current
@@ -109,7 +97,6 @@ function AnnotationItem({
                 display: 'flex',
                 alignItems: 'center',
                 gap: isMobile ? '4px' : '6px',
-                flexDirection: flip ? 'row-reverse' : 'row',
               }}
             >
               {/* Dot + line */}
@@ -123,20 +110,19 @@ function AnnotationItem({
                 }}
               >
                 <line
-                  x1={flip ? lineW : 0}
+                  x1={0}
                   y1="0"
-                  x2={flip ? 0 : lineW}
+                  x2={lineW}
                   y2="0"
                   stroke="rgba(255,255,255,0.2)"
                   strokeWidth="0.8"
-                  style={{ transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)' }}
                 />
                 <circle
-                  cx={flip ? lineW : 0}
+                  cx={0}
                   cy="0"
                   r={isMobile ? 1.5 : 1.8}
                   fill={hovered ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)'}
-                  style={{ transition: 'fill 0.3s ease, cx 0.4s cubic-bezier(0.22,1,0.36,1)' }}
+                  style={{ transition: 'fill 0.3s ease' }}
                 />
               </svg>
               <span
@@ -166,8 +152,7 @@ function AnnotationItem({
                   transition:
                     'max-height 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease',
                   marginTop: '3px',
-                  paddingLeft: flip ? '0' : `${lineW + 6}px`,
-                  paddingRight: flip ? `${lineW + 6}px` : '0',
+                  paddingLeft: `${lineW + 6}px`,
                 }}
               >
                 <span
@@ -179,7 +164,6 @@ function AnnotationItem({
                     userSelect: 'none',
                     whiteSpace: 'nowrap',
                     display: 'block',
-                    textAlign: flip ? 'right' : 'left',
                   }}
                 >
                   {ann.detail}
