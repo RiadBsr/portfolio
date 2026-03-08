@@ -1,7 +1,16 @@
 :root {
+  /* Legacy tokens */
   --background: #050505;
-  /* Deep dark background */
   --foreground: #f8fafc;
+
+  /* Storyboard design tokens */
+  --black: #030303;
+  --white: #F2F2EE;
+  --grey: #111;
+  --mid: #4A4A4A;
+  --wire: rgba(255, 255, 255, 0.10);
+  --wire-bright: rgba(255, 255, 255, 0.25);
+  --accent: #E0E0D8;
 }
 
 html,
@@ -18,4 +27,18 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* Hologram reveal animation for annotations — one-shot staggered boot-up */
+@keyframes holoReveal {
+  0%   { opacity: 0; transform: translateX(-4px); }
+  8%   { opacity: 0.6; }
+  16%  { opacity: 0.1; }
+  24%  { opacity: 0.7; }
+  32%  { opacity: 0.15; }
+  48%  { opacity: 0.85; }
+  56%  { opacity: 0.3; }
+  70%  { opacity: 0.9; transform: translateX(0); }
+  85%  { opacity: 0.5; }
+  100% { opacity: 1; transform: translateX(0); }
 }

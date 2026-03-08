@@ -155,6 +155,12 @@ HTML overlay (`position: fixed`, `z-index` above canvas):
 
 **What's done:** The head model, cursor/gyro tracking, blink animation, wireframe overlay — all complete.
 
+**Exact dimensions of the mesh from Blender:**
+X: 0.289 m
+Y: 0.359 m
+Z: 0.507 m
+NOTE: the head's origin is the nose tip.
+
 **What needs to change/add:**
 
 1. **Camera start position**: Currently `[0, 0, 10]` with zoom 20. For S-0, the storyboard wants the camera "inside the mesh's bounding sphere" — the head fills 80% of viewport, only one eye + cheek visible. The spiral path start point (radius ~2 from head center) handles this — the page.tsx camera setup will be replaced by the spiral camera system entirely.

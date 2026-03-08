@@ -7,12 +7,17 @@ import { damp3 } from 'maath/easing'
 import { useStore } from '@/store/useStore'
 
 // ─── Spiral parameters ────────────────────────────────────────────────────────
-// Archimedean spiral: 2.5 full revolutions, radius 2 → 45 Three.js units.
+// Archimedean spiral: 2.5 full revolutions, radius 0.5 → 45 Three.js units.
+// Start radius ~1.3 puts the camera near the head surface for the extreme
+// close-up at S-0 (head fills ~80% of viewport with fov=14).
+// Angle offset π/2 ensures the spiral starts directly in front of the head
+// (+Z axis) rather than on its side.
 // Gentle Y undulation (±2 units) gives a helix feel — like unwinding a DNA strand.
 const SPIRAL_POINTS = 80
 const SPIRAL_REVOLUTIONS = 2.5
-const SPIRAL_RADIUS_START = 2
+const SPIRAL_RADIUS_START = 1.3
 const SPIRAL_RADIUS_END = 45
+const SPIRAL_ANGLE_OFFSET = Math.PI / 2 // start in front of head (+Z direction)
 
 // ─── Scene focal points ───────────────────────────────────────────────────────
 // The world-space position the camera looks toward when each scene is active.
@@ -43,11 +48,11 @@ export function buildSpiralCurve(): THREE.CatmullRomCurve3 {
   const points: THREE.Vector3[] = []
   for (let i = 0; i < SPIRAL_POINTS; i++) {
     const frac = i / (SPIRAL_POINTS - 1)
-    const angle = frac * SPIRAL_REVOLUTIONS * Math.PI * 2
+    const angle = frac * SPIRAL_REVOLUTIONS * Math.PI * 2 + SPIRAL_ANGLE_OFFSET
     const radius = SPIRAL_RADIUS_START + (SPIRAL_RADIUS_END - SPIRAL_RADIUS_START) * frac
     const x = Math.cos(angle) * radius
     const z = Math.sin(angle) * radius
-    const y = Math.sin(angle * 0.3) * 2  // ±2 units of vertical drift
+    const y = Math.sin(angle * 0.3) * 2 * frac  // ±2 units, scaled by frac so y=0 at start
     points.push(new THREE.Vector3(x, y, z))
   }
   return new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5)
@@ -67,8 +72,18 @@ export function SpiralCamera() {
   // active scene's focal point. Stored as a ref to avoid triggering re-renders.
   const lookAt = useRef(new THREE.Vector3(0, 0, 0))
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const t = Math.max(0, Math.min(1, scrollT))
+
+    // Dynamic FOV: widen on portrait screens so the head has breathing room
+    const BASE_FOV = 14
+    const aspect = state.size.width / state.size.height
+    const targetFov = aspect < 1 ? BASE_FOV + (1 - aspect) * 16 : BASE_FOV
+    const cam = camera as THREE.PerspectiveCamera
+    if (Math.abs(cam.fov - targetFov) > 0.5) {
+      cam.fov = targetFov
+      cam.updateProjectionMatrix()
+    }
 
     if (chatMode) {
       // Chat mode: lerp camera to the fixed chat position (Phase 3 will animate this)

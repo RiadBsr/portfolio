@@ -5,8 +5,13 @@ import { Suspense } from "react";
 import * as THREE from "three";
 import { Model as HeadModel } from "@/components/Head";
 import { SpiralCamera } from "@/components/SpiralCamera";
+import { Particles } from "@/components/Particles";
+import { Annotations } from "@/components/Annotations";
+import { HUD } from "@/components/HUD";
+import { useScroll } from "@/hooks/useScroll";
+import { useAutoDrift } from "@/hooks/useAutoDrift";
 
-// Mute the THREE.Clock deprecation warning until @react-three/fiber updates to THREE.Timer
+// Suppress deprecation warnings from Three.js r183 until R3F ships updated internals
 if (typeof console !== 'undefined') {
   const originalWarn = console.warn
   console.warn = (...args) => {
@@ -17,9 +22,18 @@ if (typeof console !== 'undefined') {
 }
 
 export default function Home() {
+  // Side-effect hooks — no return value, just set up event listeners
+  useScroll()
+  useAutoDrift()
+
   return (
     <main style={{ width: "100vw", height: "100vh" }}>
-      <Canvas camera={{ fov: 50, near: 0.1, far: 200, position: [2, 0, 0] }} shadows={{ type: THREE.PCFShadowMap }}>
+      <Canvas
+        // Perspective camera — fov 14 (telephoto), starts directly in front of the head.
+        // SpiralCamera takes over positioning on the first frame.
+        camera={{ fov: 14, near: 0.1, far: 200, position: [0, 0, 1.3] }}
+        shadows={{ type: THREE.PCFShadowMap }}
+      >
         <color attach="background" args={["#050505"]} />
 
         {/* Minimal ambient fill — keeps deep shadows */}
@@ -39,21 +53,26 @@ export default function Home() {
           color="#ffffff"
         />
 
-        {/* Subtle rim light from behind — adds depth/edge separation */}
+        {/* Rim light from behind — adds depth/edge separation */}
         <pointLight position={[-1, 2, -2]} intensity={10} color="#ffffff" />
 
+        {/* Camera controller — drives position along Archimedean spiral */}
         <SpiralCamera />
 
+        {/* Ambient particle cloud centered on head */}
+        <Particles />
+
+        {/* S-0 face annotations — fade out and unmount as camera pulls back */}
+        <Annotations />
+
+        {/* Head model — never removed; camera orbits around it */}
         <Suspense fallback={null}>
           <HeadModel scale={1} />
         </Suspense>
       </Canvas>
 
-      {/* Basic UI Overlay to test Zustand state later */}
-      <div style={{ position: "absolute", top: 40, left: 40, zIndex: 10 }}>
-        <h1 style={{ fontSize: "2rem", margin: 0, fontWeight: "bold" }}>Portfolio</h1>
-        <p style={{ opacity: 0.7 }}>Work in progress</p>
-      </div>
+      {/* Persistent HTML overlay — outside Canvas, always on top */}
+      <HUD />
     </main>
   );
 }
