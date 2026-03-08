@@ -7,7 +7,8 @@ import React from 'react'
 import { JSX } from 'react/jsx-runtime'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
-import { dampQ } from 'maath/easing'
+import { dampQ, damp } from 'maath/easing'
+import { useStore } from '@/store/useStore'
 
 // Dummy objects for computing target quaternions (allocated once, reused every frame)
 const dummyHead = new THREE.Object3D()
@@ -180,6 +181,41 @@ export function Model(props: JSX.IntrinsicElements['group']) {
       }
     }
 
+    // Set up morph targets for pupil dilation — desktop only (no hover on mobile).
+    // Scale around the geometry centroid (not origin) since bind-pose positions
+    // are relative to the armature root, not the pupil center.
+    const PUPIL_DILATE_SCALE = 1.4
+    const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
+    for (const name of (isDesktop ? ['pupil_left', 'pupil_right'] : [])) {
+      const obj = cloned.getObjectByName(name)
+      if (!obj || !(obj as THREE.Mesh).isMesh) continue
+      const mesh = obj as THREE.Mesh
+      const pos = mesh.geometry.getAttribute('position')
+      if (!pos) continue
+
+      // Compute geometry centroid
+      let cx = 0, cy = 0, cz = 0
+      for (let i = 0; i < pos.count; i++) {
+        cx += pos.getX(i); cy += pos.getY(i); cz += pos.getZ(i)
+      }
+      cx /= pos.count; cy /= pos.count; cz /= pos.count
+
+      // Scale each vertex outward from centroid
+      const dilated = new THREE.Float32BufferAttribute(
+        new Float32Array(pos.count * 3), 3
+      )
+      for (let i = 0; i < pos.count; i++) {
+        dilated.setXYZ(
+          i,
+          cx + (pos.getX(i) - cx) * PUPIL_DILATE_SCALE,
+          cy + (pos.getY(i) - cy) * PUPIL_DILATE_SCALE,
+          cz + (pos.getZ(i) - cz) * PUPIL_DILATE_SCALE
+        )
+      }
+      mesh.geometry.morphAttributes.position = [dilated]
+      mesh.morphTargetInfluences = [0]
+    }
+
     return cloned
   }, [gltf.scene])
 
@@ -215,11 +251,17 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   const eyeRBoneRef = React.useRef<THREE.Object3D | null>(null)
   const eyeLRestQuat = React.useRef(new THREE.Quaternion())
   const eyeRRestQuat = React.useRef(new THREE.Quaternion())
+  const pupilLRef = React.useRef<THREE.Object3D | null>(null)
+  const pupilRRef = React.useRef<THREE.Object3D | null>(null)
+  // Current animated pupil morph influence (0 = normal, 1 = dilated)
+  const pupilScaleVal = React.useRef(0)
 
   React.useEffect(() => {
     headBoneRef.current = clone.getObjectByName('Head') ?? null
     eyeLBoneRef.current = clone.getObjectByName('eyeL001') ?? null
     eyeRBoneRef.current = clone.getObjectByName('eyeR001') ?? null
+    pupilLRef.current = clone.getObjectByName('pupil_left') ?? null
+    pupilRRef.current = clone.getObjectByName('pupil_right') ?? null
     // Save rest quaternions before we start modifying them
     if (eyeLBoneRef.current) eyeLRestQuat.current.copy(eyeLBoneRef.current.quaternion)
     if (eyeRBoneRef.current) eyeRRestQuat.current.copy(eyeRBoneRef.current.quaternion)
@@ -301,6 +343,8 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     }
   }, [clone, gltf.animations])
 
+  const pupilDilated = useStore((s) => s.pupilDilateCount > 0)
+
   useFrame((state, delta) => {
     mixerRef.current?.update(delta)
 
@@ -340,6 +384,17 @@ export function Model(props: JSX.IntrinsicElements['group']) {
       dummyEyeR.updateMatrix()
       _eyeRTargetQ.copy(eyeRRestQuat.current).multiply(dummyEyeR.quaternion)
       dampQ(eyeR.quaternion, _eyeRTargetQ, 0.08, delta)
+    }
+
+    // Pupil dilation — smooth morph influence towards target
+    const targetInfluence = pupilDilated ? 1 : 0
+    damp(pupilScaleVal, 'current', targetInfluence, 0.12, delta)
+    const inf = pupilScaleVal.current
+    if (pupilLRef.current && (pupilLRef.current as THREE.Mesh).morphTargetInfluences) {
+      (pupilLRef.current as THREE.Mesh).morphTargetInfluences![0] = inf
+    }
+    if (pupilRRef.current && (pupilRRef.current as THREE.Mesh).morphTargetInfluences) {
+      (pupilRRef.current as THREE.Mesh).morphTargetInfluences![0] = inf
     }
   })
 

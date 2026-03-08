@@ -26,6 +26,8 @@ export function HUD() {
   const activeScene = useStore((s) => s.activeScene)
   const chatMode = useStore((s) => s.chatMode)
   const setScrollT = useStore((s) => s.setScrollT)
+  const pupilDilate = useStore((s) => s.pupilDilate)
+  const pupilContract = useStore((s) => s.pupilContract)
 
   const zLabel = chatMode ? 'CHAT_MODE' : scrollT.toFixed(3)
 
@@ -41,6 +43,8 @@ export function HUD() {
       {/* ── Top-left: name (click to return to S-0) ── */}
       <button
         onClick={() => setScrollT(0)}
+        onMouseEnter={pupilDilate}
+        onMouseLeave={pupilContract}
         style={{
           position: 'absolute',
           top: 20,
@@ -76,6 +80,8 @@ export function HUD() {
           href="/resume.pdf"
           target="_blank"
           rel="noopener noreferrer"
+          onMouseEnter={pupilDilate}
+          onMouseLeave={pupilContract}
           style={{
             ...mono,
             fontSize: '9px',
@@ -122,6 +128,8 @@ export function HUD() {
           <button
             key={i}
             onClick={() => setScrollT(scene.t)}
+            onMouseEnter={pupilDilate}
+            onMouseLeave={pupilContract}
             style={{
               ...mono,
               fontSize: '8px',

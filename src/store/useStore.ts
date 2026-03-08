@@ -23,10 +23,14 @@ interface StoreState {
   chatMode: boolean
   // flips to true on first scroll/touch; disables auto-drift permanently
   userHasInteracted: boolean
+  // > 0 when any UI element is hovered (ref-counted for overlapping hovers)
+  pupilDilateCount: number
 
   setScrollT: (t: number) => void
   setChatMode: (mode: boolean) => void
   setUserHasInteracted: (interacted: boolean) => void
+  pupilDilate: () => void
+  pupilContract: () => void
 }
 
 export const useStore = create<StoreState>()((set) => ({
@@ -44,4 +48,8 @@ export const useStore = create<StoreState>()((set) => ({
   setChatMode: (mode: boolean) => set({ chatMode: mode }),
 
   setUserHasInteracted: (interacted: boolean) => set({ userHasInteracted: interacted }),
+
+  pupilDilateCount: 0,
+  pupilDilate: () => set((s) => ({ pupilDilateCount: s.pupilDilateCount + 1 })),
+  pupilContract: () => set((s) => ({ pupilDilateCount: Math.max(0, s.pupilDilateCount - 1) })),
 }))

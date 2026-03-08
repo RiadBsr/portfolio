@@ -56,8 +56,11 @@ function AnnotationItem({
   const [hovered, setHovered] = useState(false)
   const revealed = useRef(false)
 
-  const onOver = useCallback(() => setHovered(true), [])
-  const onOut = useCallback(() => setHovered(false), [])
+  const pupilDilate = useStore((s) => s.pupilDilate)
+  const pupilContract = useStore((s) => s.pupilContract)
+
+  const onOver = useCallback(() => { setHovered(true); pupilDilate() }, [pupilDilate])
+  const onOut = useCallback(() => { setHovered(false); pupilContract() }, [pupilContract])
   const onAnimEnd = useCallback(() => { revealed.current = true }, [])
 
   const lineW = isMobile ? LINE_MOBILE : (hovered ? LINE_EXPANDED : LINE_COLLAPSED)
