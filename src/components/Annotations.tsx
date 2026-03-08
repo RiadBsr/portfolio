@@ -13,6 +13,7 @@ const ANNOTATIONS = [
     label: 'NEURAL MESH',
     detail: 'Skeletal wireframe extracted from skinned geometry boundary edges',
     delay: '0s',
+    flip: false,
   },
   {
     id: 'edges',
@@ -20,6 +21,7 @@ const ANNOTATIONS = [
     label: 'EDGE DETECT',
     detail: 'Sharp edges rendered via custom skinning shader on LineSegments',
     delay: '0.1s',
+    flip: true,
   },
   {
     id: 'rig',
@@ -27,6 +29,7 @@ const ANNOTATIONS = [
     label: 'BONE RIG',
     detail: 'Quaternion-damped bone tracking for gaze and blink animation',
     delay: '0.2s',
+    flip: false,
   },
 ]
 
@@ -58,6 +61,7 @@ function AnnotationItem({
   const onAnimEnd = useCallback(() => { revealed.current = true }, [])
 
   const lineW = isMobile ? LINE_MOBILE : (hovered ? LINE_EXPANDED : LINE_COLLAPSED)
+  const flip = ann.flip
 
   return (
     <>
@@ -78,12 +82,13 @@ function AnnotationItem({
             onAnimationEnd={onAnimEnd}
             style={{
               position: 'absolute',
-              left: '0px',
+              left: flip ? 'auto' : '0px',
+              right: flip ? '0px' : 'auto',
               top: '0px',
               transform: 'translateY(-50%)',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'flex-start',
+              alignItems: flip ? 'flex-end' : 'flex-start',
               pointerEvents: 'none',
               opacity: revealed.current ? opacity : undefined,
               animation: revealed.current
@@ -97,6 +102,7 @@ function AnnotationItem({
                 display: 'flex',
                 alignItems: 'center',
                 gap: isMobile ? '4px' : '6px',
+                flexDirection: flip ? 'row-reverse' : 'row',
               }}
             >
               {/* Dot + line */}
@@ -110,15 +116,15 @@ function AnnotationItem({
                 }}
               >
                 <line
-                  x1={0}
+                  x1={flip ? lineW : 0}
                   y1="0"
-                  x2={lineW}
+                  x2={flip ? 0 : lineW}
                   y2="0"
                   stroke="rgba(255,255,255,0.2)"
                   strokeWidth="0.8"
                 />
                 <circle
-                  cx={0}
+                  cx={flip ? lineW : 0}
                   cy="0"
                   r={isMobile ? 1.5 : 1.8}
                   fill={hovered ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)'}
@@ -152,7 +158,8 @@ function AnnotationItem({
                   transition:
                     'max-height 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease',
                   marginTop: '3px',
-                  paddingLeft: `${lineW + 6}px`,
+                  paddingLeft: flip ? '0' : `${lineW + 6}px`,
+                  paddingRight: flip ? `${lineW + 6}px` : '0',
                 }}
               >
                 <span
@@ -164,6 +171,7 @@ function AnnotationItem({
                     userSelect: 'none',
                     whiteSpace: 'nowrap',
                     display: 'block',
+                    textAlign: flip ? 'right' : 'left',
                   }}
                 >
                   {ann.detail}
