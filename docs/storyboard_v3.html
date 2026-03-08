@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>riadboussoura.com — Storyboard v3 — Latent Space (Improved)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
+
+  :root {
+    --black: #030303;
+    --white: #F2F2EE;
+    --grey: #111;
+    --mid: #4A4A4A;
+    --dim: rgba(255,255,255,0.05);
+    --wire: rgba(255,255,255,0.10);
+    --wire-bright: rgba(255,255,255,0.25);
+    --accent: #E0E0D8;
+    --latent: rgba(255,255,255,0.07);
+    --red: #FF3B30;
+    --green: #30D158;
+    --amber: #FFD60A;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  /* ─── COVER ─── */
+  .cover {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    text-align: center; padding: 60px 32px;
+    border-bottom: 1px solid var(--wire);
+    position: relative; overflow: hidden;
+  }
+  .cover::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 55% 45% at 50% 50%,
+      rgba(255,255,255,0.035) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .cover-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; letter-spacing: 0.22em;
+    color: var(--mid); text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+  .cover h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 11vw, 130px);
+    letter-spacing: 0.03em; line-height: 0.88;
+    margin-bottom: 16px;
+  }
+  .cover h1 em { color: var(--mid); font-style: normal; }
+  .cover-concept {
+    max-width: 560px;
+    font-size: 13px; color: var(--mid);
+    line-height: 1.8; margin-bottom: 40px;
+  }
+  .cover-concept strong { color: rgba(255,255,255,0.6); font-weight: 500; }
+  .kpi-row {
+    display: flex; gap: 0;
+    border: 1px solid var(--wire);
+    flex-wrap: wrap; justify-content: center;
+  }
+  .kpi {
+    padding: 14px 28px;
+    border-right: 1px solid var(--wire);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px; color: var(--mid);
+    text-align: center; letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .kpi:last-child { border-right: none; }
+  .kpi strong { display: block; font-size: 18px; color: var(--white); margin-bottom: 2px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.06em; }
+
+  /* ─── CHANGELOG ─── */
+  .changelog {
+    border-bottom: 1px solid var(--wire);
+    padding: 20px 28px;
+    background: rgba(255,255,255,0.015);
+  }
+  .changelog h3 {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--mid); text-transform: uppercase;
+    letter-spacing: 0.16em; margin-bottom: 12px;
+  }
+  .cl-item {
+    display: grid; grid-template-columns: 80px 1fr;
+    gap: 12px; margin-bottom: 8px;
+    font-size: 12px; line-height: 1.6;
+  }
+  .cl-label {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 2px;
+    text-align: center; height: fit-content;
+    margin-top: 2px;
+  }
+  .cl-label.new { background: rgba(48,209,88,0.15); color: var(--green); }
+  .cl-label.changed { background: rgba(255,214,10,0.12); color: var(--amber); }
+  .cl-label.removed { background: rgba(255,59,48,0.12); color: var(--red); }
+  .cl-text { color: #666; }
+  .cl-text strong { color: rgba(255,255,255,0.6); font-weight: 500; }
+
+  /* ─── SECTION SHELL ─── */
+  .section { border-bottom: 1px solid var(--wire); }
+  .sec-head {
+    display: grid; grid-template-columns: 72px 1fr;
+    border-bottom: 1px solid var(--wire);
+  }
+  .sec-num {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--mid); padding: 18px;
+    border-right: 1px solid var(--wire);
+    display: flex; align-items: center; justify-content: center;
+    letter-spacing: 0.1em;
+  }
+  .sec-title-row {
+    padding: 18px 28px;
+    display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  .sec-title-row h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(20px, 3.5vw, 34px);
+    letter-spacing: 0.06em; font-weight: 400;
+  }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    letter-spacing: 0.15em; color: var(--mid);
+    text-transform: uppercase;
+    border: 1px solid var(--wire); padding: 3px 9px; border-radius: 1px;
+  }
+  .tag.hi { border-color: rgba(255,255,255,0.25); color: rgba(255,255,255,0.5); }
+  .tag.new { border-color: rgba(48,209,88,0.3); color: rgba(48,209,88,0.6); }
+  .tag.changed { border-color: rgba(255,214,10,0.3); color: rgba(255,214,10,0.6); }
+
+  /* ─── GRID LAYOUTS ─── */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; }
+  .g-asym { display: grid; grid-template-columns: 2fr 1fr; }
+  .g-asym-r { display: grid; grid-template-columns: 1fr 2fr; }
+  @media(max-width:700px) { .g2,.g3,.g-asym,.g-asym-r { grid-template-columns:1fr; } }
+
+  /* ─── CELL ─── */
+  .cell {
+    border-right: 1px solid var(--wire);
+    border-bottom: 1px solid var(--wire);
+    padding: 26px 28px;
+  }
+  .cell:last-child { border-right: none; }
+  .cell-label {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    color: var(--mid); text-transform: uppercase;
+    letter-spacing: 0.18em; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cell-label::after { content: ''; flex: 1; height: 1px; background: var(--wire); }
+  .cell h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 19px; letter-spacing: 0.06em; font-weight: 400;
+    margin-bottom: 9px; color: var(--accent);
+  }
+  .cell p { font-size: 13px; color: #777; line-height: 1.75; }
+  .cell p strong { color: rgba(255,255,255,0.75); font-weight: 500; }
+  .cell p em { color: rgba(255,255,255,0.4); font-style: normal; }
+
+  /* ─── PILLS ─── */
+  .pills { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+  .pill {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    color: #555; border: 1px solid var(--wire);
+    padding: 3px 8px; border-radius: 1px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .pill.bright { color: rgba(255,255,255,0.45); border-color: rgba(255,255,255,0.2); }
+
+  /* ─── VIEWPORT WIREFRAME ─── */
+  .vp {
+    background: #0A0A0A;
+    border: 1px solid var(--wire); border-radius: 3px;
+    margin: 14px 0; position: relative; overflow: hidden;
+  }
+  .vp.desk { aspect-ratio: 16/9; }
+  .vp.phone-wrap {
+    max-width: 160px; margin: 14px auto;
+    background: transparent; border: none;
+  }
+  .phone-shell {
+    width: 140px; height: 280px;
+    border: 1.5px solid rgba(255,255,255,0.18);
+    border-radius: 18px; padding: 7px;
+    background: #0D0D0D; margin: auto;
+  }
+  .phone-inner {
+    width: 100%; height: 100%;
+    background: var(--black); border-radius: 12px;
+    border: 1px solid var(--wire); overflow: hidden;
+    display: flex; flex-direction: column;
+    align-items: center; padding: 8px 6px; gap: 4px;
+  }
+  .ph-notch {
+    width: 28px; height: 3px;
+    background: rgba(255,255,255,0.08); border-radius: 2px; margin-bottom: 4px;
+  }
+
+  /* ─── PATH WRAP ─── */
+  .path-wrap {
+    padding: 24px 28px;
+    border-bottom: 1px solid var(--wire);
+  }
+  .path-wrap h3 {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--mid); text-transform: uppercase;
+    letter-spacing: 0.16em; margin-bottom: 16px;
+  }
+  .path-bg {
+    background: #0A0A0A; border: 1px solid var(--wire);
+    border-radius: 3px; padding: 16px; overflow-x: auto;
+  }
+
+  /* ─── SCENE ROW ─── */
+  .scene-row {
+    display: grid; grid-template-columns: 100px 1fr;
+    border-bottom: 1px solid var(--wire);
+  }
+  .scene-stamp {
+    padding: 20px 18px;
+    border-right: 1px solid var(--wire);
+    display: flex; flex-direction: column;
+    justify-content: flex-start; align-items: center;
+    gap: 4px;
+  }
+  .scene-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px; color: var(--mid); letter-spacing: 0.04em;
+    line-height: 1;
+  }
+  .scene-year {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    color: #333; letter-spacing: 0.1em;
+  }
+  .scene-priority {
+    font-family: 'Space Mono', monospace; font-size: 8px;
+    color: #222; letter-spacing: 0.1em; text-transform: uppercase;
+    border: 1px solid #222; padding: 2px 5px; border-radius: 1px;
+    margin-top: 4px;
+  }
+  .scene-priority.max { color: rgba(255,255,255,0.35); border-color: rgba(255,255,255,0.2); }
+  .scene-body { padding: 22px 26px; }
+  .scene-body h4 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px; letter-spacing: 0.06em; font-weight: 400;
+    color: var(--accent); margin-bottom: 7px;
+  }
+  .scene-body p { font-size: 13px; color: #6A6A6A; line-height: 1.75; }
+  .scene-body p strong { color: rgba(255,255,255,0.7); font-weight: 500; }
+  .scene-3d-note {
+    margin-top: 10px; padding: 9px 12px;
+    border-left: 2px solid var(--wire);
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: #3A3A3A; line-height: 1.6;
+  }
+  .scene-3d-note strong { color: #555; }
+
+  /* ─── OBJECT LIFECYCLE ─── */
+  .lifecycle {
+    margin-top: 12px; padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 3px;
+    background: rgba(255,255,255,0.015);
+  }
+  .lifecycle h5 {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    color: rgba(48,209,88,0.5); text-transform: uppercase;
+    letter-spacing: 0.14em; margin-bottom: 6px;
+  }
+  .lifecycle p {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: #444; line-height: 1.7;
+  }
+  .lifecycle p strong { color: #666; }
+
+  /* ─── FUNNEL ─── */
+  .funnel { display: flex; flex-direction: column; gap: 0; }
+  .funnel-step {
+    display: grid; grid-template-columns: 48px 1fr;
+    border-bottom: 1px solid var(--wire);
+  }
+  .funnel-num {
+    font-family: 'Bebas Neue', sans-serif; font-size: 26px;
+    color: var(--mid); padding: 14px 12px;
+    border-right: 1px solid var(--wire);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .funnel-content { padding: 14px 20px; }
+  .funnel-content h4 {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.14em;
+    color: var(--accent); margin-bottom: 4px;
+  }
+  .funnel-content p { font-size: 12px; color: var(--mid); line-height: 1.6; }
+  .funnel-content p strong { color: rgba(255,255,255,0.55); }
+
+  /* ─── CHAT MOCKUP ─── */
+  .chat-box {
+    background: #0D0D0D; border: 1px solid var(--wire);
+    border-radius: 3px; overflow: hidden; margin-top: 14px;
+  }
+  .chat-top {
+    padding: 9px 14px; border-bottom: 1px solid var(--wire);
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    color: var(--mid); display: flex; align-items: center; gap: 8px;
+  }
+  .cdot { width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+  .chat-msgs { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .msg {
+    max-width: 88%; padding: 7px 11px; border-radius: 2px;
+    font-size: 11px; line-height: 1.55;
+  }
+  .msg.u { align-self: flex-end; background: rgba(255,255,255,0.06); color: #aaa; border: 1px solid var(--wire); }
+  .msg.a { align-self: flex-start; color: #666; border: 1px solid var(--wire); border-left: 2px solid rgba(255,255,255,0.2); }
+  .msg.a strong { color: rgba(255,255,255,0.7); }
+
+  /* ─── LATENT DIAGRAM ─── */
+  .latent-diagram {
+    padding: 24px 28px; border-bottom: 1px solid var(--wire);
+  }
+  .latent-diagram h3 {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--mid); text-transform: uppercase;
+    letter-spacing: 0.16em; margin-bottom: 16px;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 28px; text-align: center;
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: #2A2A2A; border-top: 1px solid var(--wire);
+    letter-spacing: 0.1em;
+  }
+
+  @media(max-width:600px) {
+    .sec-head { grid-template-columns: 48px 1fr; }
+    .scene-row { grid-template-columns: 70px 1fr; }
+    .funnel-step { grid-template-columns: 38px 1fr; }
+    .kpi { padding: 12px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════ COVER ══════════ -->
+<div class="cover">
+  <div class="cover-eyebrow">riadboussoura.com — Storyboard v3 — Improved</div>
+  <h1>LATENT<br><em>SPACE</em></h1>
+  <p class="cover-concept">
+    v3 inherits v2's <strong>reverse chronology</strong> and latent space metaphor.<br>
+    Improvements: <strong>spiral camera path</strong> for natural object culling,<br>
+    <strong>3D tablet chat UI</strong> as in-world interaction,<br>
+    <strong>object lifecycle specs</strong> for every scene (enter → dwell → exit → dispose),<br>
+    and a defined <strong>Art Portfolio gallery scene</strong>.
+  </p>
+  <div class="kpi-row">
+    <div class="kpi"><strong>Spiral</strong>Camera orbit path</div>
+    <div class="kpi"><strong>3D Tablet</strong>In-world chat UI</div>
+    <div class="kpi"><strong>8</strong>Scenes + gallery</div>
+    <div class="kpi"><strong>Lifecycle</strong>Enter/exit/dispose</div>
+    <div class="kpi"><strong>Auto-drift</strong>Idle scroll hint</div>
+  </div>
+</div>
+
+<!-- ══════════ CHANGELOG V2 → V3 ══════════ -->
+<div class="changelog">
+  <h3>Changelog — v2 → v3</h3>
+  <div class="cl-item">
+    <span class="cl-label new">NEW</span>
+    <span class="cl-text"><strong>Spiral camera path</strong> — camera orbits outward in a helix, not a straight line. Each scene is at a different angular position around the head. Objects naturally rotate behind the camera → culled without visible pop-in.</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label new">NEW</span>
+    <span class="cl-text"><strong>3D Tablet Chat UI</strong> — clicking "Chat" materializes a low-poly tablet in the 3D scene. Chat renders on the tablet screen via drei &lt;Html&gt;. Suggested prompts appear as floating chips near the tablet. This replaces the generic slide-in panel.</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label new">NEW</span>
+    <span class="cl-text"><strong>Object lifecycle specs</strong> for every scene: exact scroll % for ENTER (fade+drift in), DWELL (full visibility, text legible), EXIT (drift behind camera), DISPOSE (geometry freed from memory). Enables LOD and frustum culling.</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label new">NEW</span>
+    <span class="cl-text"><strong>Art Portfolio gallery</strong> — a dedicated scene (S-7) with a gallery wall of floating frames in the 3D space. Each frame is a &lt;Html&gt; plane linking to the full /art page. Serves the creative portfolio goal.</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label new">NEW</span>
+    <span class="cl-text"><strong>Auto-drift idle hint</strong> — if user hasn't scrolled within 3.5s after load, camera begins drifting backward at 0.5% per second. Any touch/scroll input overrides and gives manual control. Teaches the mechanic without text.</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label changed">CHANGED</span>
+    <span class="cl-text"><strong>Sorbonne scene</strong> — removed Eiffel Tower (tourist cliché). Replaced with unfolding research paper pages and a neural architecture diagram that assembles. Signals "academic rigor" not "Paris tourism."</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label changed">CHANGED</span>
+    <span class="cl-text"><strong>Camera close-up now even tighter</strong> — head fills 80% of viewport at t=0, only one eye + cheek visible. Annotation lines render against the mesh directly. Creates cinematic intimacy before the pull-back.</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label changed">CHANGED</span>
+    <span class="cl-text"><strong>Mobile chat</strong> — full-screen takeover instead of bottom sheet. The 3D tablet tilts to face the phone camera. On mobile, the tablet IS the chat — no overlay needed.</span>
+  </div>
+  <div class="cl-item">
+    <span class="cl-label removed">REMOVED</span>
+    <span class="cl-text"><strong>"SCROLL TO DECODE" text prompt</strong> — replaced by auto-drift idle behavior. The mechanic teaches itself. The z-coordinate counter at bottom-left is the only textual hint that scrolling controls the experience.</span>
+  </div>
+</div>
+
+
+<!-- ══════════ 00 — STRATEGIC LOGIC ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">00</div>
+    <div class="sec-title-row">
+      <h2>STRATEGIC LOGIC (INHERITED FROM V2)</h2>
+      <div class="tags"><span class="tag">Unchanged</span></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="cell">
+      <div class="cell-label">The Recruiter's Behavior</div>
+      <h3>THEY BOUNCE IN 8 SECONDS</h3>
+      <p>Reverse chronology remains the core strategy. <strong>GoPro is scene 1</strong>, not scene 6. The inverted pyramid ensures a recruiter who bounces after 15s still saw the most impressive thing. This is unchanged from v2 — it was already correct.</p>
+    </div>
+    <div class="cell">
+      <div class="cell-label">The Latent Space Metaphor</div>
+      <h3>DECODING IS THE CONCEPT</h3>
+      <p>The head = <strong>latent vector z</strong>. Scrolling = the decoder. The spiral camera path in v3 now makes this even more resonant: the helix unwinding outward is visually similar to how <strong>dimensionality unfolds in t-SNE/UMAP projections</strong>. Any ML researcher will recognize the visual language instantly.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 01 — SPIRAL CAMERA PATH ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">01</div>
+    <div class="sec-title-row">
+      <h2>CAMERA PATH — SPIRAL ORBIT DECODE</h2>
+      <div class="tags"><span class="tag new">NEW in V3</span><span class="tag">Core Architecture</span></div>
+    </div>
+  </div>
+
+  <div class="path-wrap">
+    <h3>Top-Down View — Spiral Path Unwinding From Head Center</h3>
+    <div class="path-bg">
+      <svg viewBox="0 0 700 700" width="100%" style="font-family:'Space Mono',monospace;font-size:9px;fill:none;display:block;max-width:700px;margin:auto;">
+        <rect width="700" height="700" fill="#080808"/>
+        <defs>
+          <pattern id="gd3" width="50" height="50" patternUnits="userSpaceOnUse">
+            <path d="M50 0L0 0 0 50" stroke="rgba(255,255,255,0.025)" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="700" height="700" fill="url(#gd3)"/>
+
+        <!-- Concentric reference circles -->
+        <circle cx="350" cy="350" r="40" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+        <circle cx="350" cy="350" r="90" stroke="rgba(255,255,255,0.04)" stroke-width="0.5"/>
+        <circle cx="350" cy="350" r="150" stroke="rgba(255,255,255,0.03)" stroke-width="0.5"/>
+        <circle cx="350" cy="350" r="220" stroke="rgba(255,255,255,0.025)" stroke-width="0.5"/>
+        <circle cx="350" cy="350" r="290" stroke="rgba(255,255,255,0.02)" stroke-width="0.5"/>
+
+        <!-- HEAD at center -->
+        <g transform="translate(350,350)">
+          <polygon points="0,-16 10,-9 12,2 8,13 0,17 -8,13 -12,2 -10,-9"
+            fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+          <circle cx="-4" cy="-2" r="2.5" stroke="rgba(255,255,255,0.5)" stroke-width="0.6"/>
+          <circle cx="4" cy="-2" r="2.5" stroke="rgba(255,255,255,0.5)" stroke-width="0.6"/>
+          <text x="-10" y="28" fill="rgba(255,255,255,0.5)" font-size="8">HEAD</text>
+          <text x="-10" y="38" fill="#333" font-size="7">z = 0.000</text>
+        </g>
+
+        <!-- Spiral camera path (Archimedean spiral, top-down view) -->
+        <path d="M 360,340
+          C 370,310 400,290 390,350
+          C 380,410 310,420 300,350
+          C 290,280 340,240 400,250
+          C 460,260 490,330 480,400
+          C 470,470 390,510 310,500
+          C 230,490 190,420 200,340
+          C 210,260 280,200 370,190
+          C 460,180 540,260 550,360
+          C 560,460 490,560 380,570
+          C 270,580 170,500 160,380
+          C 150,260 240,150 370,140
+          C 500,130 600,240 610,380
+          C 620,520 510,640 370,650"
+          stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="8 5"/>
+
+        <!-- Camera icon at start (very close to head) -->
+        <g transform="translate(360,338)">
+          <rect x="-4" y="-3" width="8" height="6" stroke="rgba(255,255,255,0.7)" stroke-width="0.8" fill="#111" rx="1"/>
+          <text x="8" y="2" fill="rgba(255,255,255,0.5)" font-size="7">CAM t=0</text>
+        </g>
+
+        <!-- S-1: GoPro — angular position ~80° from start, radius ~90 -->
+        <g transform="translate(428,280)">
+          <circle r="18" stroke="white" stroke-width="1.5" fill="rgba(255,255,255,0.05)"/>
+          <circle r="8" stroke="rgba(255,255,255,0.3)" stroke-width="0.8" fill="none"/>
+          <text x="-18" y="28" fill="rgba(255,255,255,0.7)" font-size="9">S-1</text>
+          <text x="-18" y="38" fill="rgba(255,255,255,0.5)" font-size="7.5">GOPRO</text>
+          <text x="-8" y="48" fill="#444" font-size="6.5">z=0.15</text>
+          <!-- Angular position indicator -->
+          <line x1="0" y1="0" x2="-78" y2="70" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" stroke-dasharray="3 3"/>
+        </g>
+
+        <!-- S-2: Sorbonne — ~180°, radius ~150 -->
+        <g transform="translate(210,390)">
+          <circle r="14" stroke="rgba(255,255,255,0.5)" stroke-width="1" fill="rgba(255,255,255,0.03)"/>
+          <!-- Paper icon -->
+          <rect x="-5" y="-7" width="10" height="14" stroke="rgba(255,255,255,0.3)" stroke-width="0.6" rx="1"/>
+          <text x="-22" y="24" fill="rgba(255,255,255,0.5)" font-size="8">S-2</text>
+          <text x="-30" y="34" fill="rgba(255,255,255,0.4)" font-size="7.5">SORBONNE</text>
+          <text x="-8" y="44" fill="#333" font-size="6.5">z=0.30</text>
+        </g>
+
+        <!-- S-3: BargMe — ~270°, radius ~220 -->
+        <g transform="translate(530,440)">
+          <circle r="12" stroke="rgba(255,255,255,0.4)" stroke-width="1" fill="rgba(255,255,255,0.03)"/>
+          <rect x="-4" y="-6" width="8" height="12" stroke="rgba(255,255,255,0.25)" stroke-width="0.6" rx="1"/>
+          <text x="-18" y="22" fill="rgba(255,255,255,0.4)" font-size="8">S-3</text>
+          <text x="-18" y="32" fill="rgba(255,255,255,0.35)" font-size="7.5">BARGME</text>
+          <text x="-8" y="42" fill="#2A2A2A" font-size="6.5">z=0.48</text>
+        </g>
+
+        <!-- S-4: Hackathon — ~30°, radius ~280 -->
+        <g transform="translate(245,170)">
+          <circle r="14" stroke="rgba(255,255,255,0.4)" stroke-width="1" fill="rgba(255,255,255,0.03)"/>
+          <!-- Trophy -->
+          <polygon points="0,-7 5,-2 3,4 -3,4 -5,-2" stroke="rgba(255,255,255,0.3)" stroke-width="0.6"/>
+          <text x="-22" y="24" fill="rgba(255,255,255,0.4)" font-size="8">S-4</text>
+          <text x="-30" y="34" fill="rgba(255,255,255,0.3)" font-size="7.5">HACKATHON</text>
+          <text x="-8" y="44" fill="#2A2A2A" font-size="6.5">z=0.60</text>
+        </g>
+
+        <!-- S-5: Samsung — ~160°, radius ~290 -->
+        <g transform="translate(110,300)">
+          <circle r="12" stroke="rgba(255,255,255,0.3)" stroke-width="1" fill="rgba(255,255,255,0.02)"/>
+          <!-- Car icon -->
+          <path d="M-6,-3 l2,-4 l8,0 l2,4 l0,4 l-12,0 Z" stroke="rgba(255,255,255,0.2)" stroke-width="0.6"/>
+          <text x="-22" y="22" fill="rgba(255,255,255,0.3)" font-size="8">S-5</text>
+          <text x="-26" y="32" fill="rgba(255,255,255,0.25)" font-size="7.5">SAMSUNG</text>
+          <text x="-8" y="42" fill="#222" font-size="6.5">z=0.72</text>
+        </g>
+
+        <!-- S-6: Origin PC — ~310°, radius ~290 -->
+        <g transform="translate(590,220)">
+          <circle r="11" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" fill="rgba(255,255,255,0.015)"/>
+          <rect x="-5" y="-6" width="10" height="12" stroke="rgba(255,255,255,0.15)" stroke-width="0.6" rx="1"/>
+          <text x="-16" y="20" fill="rgba(255,255,255,0.2)" font-size="8">S-6</text>
+          <text x="-16" y="30" fill="rgba(255,255,255,0.15)" font-size="7.5">ORIGIN</text>
+          <text x="-8" y="40" fill="#1A1A1A" font-size="6.5">z=0.85</text>
+        </g>
+
+        <!-- S-7: Art Gallery — outermost ring -->
+        <g transform="translate(370,630)">
+          <rect x="-18" y="-8" width="36" height="16" stroke="rgba(255,255,255,0.15)" stroke-width="0.8" fill="rgba(255,255,255,0.015)" rx="2"/>
+          <!-- Gallery frames -->
+          <rect x="-12" y="-4" width="7" height="8" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+          <rect x="-3" y="-4" width="7" height="8" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+          <rect x="6" y="-4" width="7" height="8" stroke="rgba(255,255,255,0.12)" stroke-width="0.5"/>
+          <text x="-22" y="20" fill="rgba(255,255,255,0.18)" font-size="8">S-7</text>
+          <text x="-28" y="30" fill="rgba(255,255,255,0.12)" font-size="7.5">ART GALLERY</text>
+          <text x="-8" y="40" fill="#151515" font-size="6.5">z=0.92</text>
+        </g>
+
+        <!-- Key benefit label -->
+        <text x="350" y="690" fill="#2A2A2A" font-size="8" text-anchor="middle" letter-spacing="0.1em">
+          SPIRAL PATH — OBJECTS BEHIND CAMERA ARE CULLED NATURALLY — NO VISIBLE POP-IN/OUT
+        </text>
+
+        <!-- Viewing angle cone from camera at first scene -->
+        <path d="M 360,338 L 440,260 L 480,330" stroke="rgba(255,255,255,0.06)" stroke-width="0.5" fill="rgba(255,255,255,0.01)"/>
+        <text x="460" y="258" fill="rgba(255,255,255,0.15)" font-size="7">FOV CONE</text>
+      </svg>
+    </div>
+    <p style="font-family:'Space Mono',monospace;font-size:10px;color:#444;margin-top:12px;letter-spacing:0.06em;line-height:1.8;">
+      <strong style="color:#666;">WHY SPIRAL:</strong> In v2's linear path, objects enter and exit the same direction — they slide in from the right and slide out to the left. This means every exit is visible, requiring careful fade logic. In the spiral, the camera naturally turns away from previous scenes as it orbits to the next. Previous objects end up behind the camera's frustum — <strong style="color:#666;">they can be culled (geometry disposed) without the user ever seeing the disappearance</strong>. This is the same frustum culling principle used in any 3D game engine. The spiral also feels more organic — like unwinding a DNA helix or expanding through a latent manifold.
+    </p>
+  </div>
+
+  <div class="g2">
+    <div class="cell">
+      <div class="cell-label">Spiral Parameters</div>
+      <h3>CAMERA SPLINE DEFINITION</h3>
+      <p>The camera follows a <strong>CatmullRom spline</strong> through control points arranged on an Archimedean spiral. The spiral starts at radius 2 (units from head center) and expands to radius 45 over the full scroll range. It completes approximately <strong>2.5 revolutions</strong> — enough that each scene is 100°+ rotated from the previous one. The camera always looks toward the current scene's focal point (not always toward the head). This means the head itself drops out of frame after S-1, which is fine — the HUD has the name permanently displayed.</p>
+      <div class="pills" style="margin-top:10px;">
+        <span class="pill bright">CatmullRomCurve3</span>
+        <span class="pill bright">2.5 revolutions</span>
+        <span class="pill bright">Radius: 2 → 45</span>
+        <span class="pill">LookAt: scene focal</span>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">Performance Benefit</div>
+      <h3>NATURAL FRUSTUM CULLING</h3>
+      <p>At any point on the spiral, <strong>only the current scene + partial view of the next scene</strong> are inside the camera frustum. All previous scenes are behind the camera. In Three.js / R3F, you set <code>frustumCulled: true</code> (default) on scene groups. Objects behind the camera are not rendered — GPU load stays constant regardless of how many scenes exist. For aggressive cleanup, attach a scroll listener that <strong>disposes geometry and textures</strong> for any scene more than 1 full revolution behind the current camera position.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 02 — SCENE BREAKDOWN ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">02</div>
+    <div class="sec-title-row">
+      <h2>SCENE BREAKDOWN — WITH OBJECT LIFECYCLES</h2>
+      <div class="tags"><span class="tag hi">Most Important First</span><span class="tag new">Lifecycle Specs</span></div>
+    </div>
+  </div>
+
+  <!-- S-0 -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·0</div>
+      <div class="scene-year">LANDING</div>
+      <div class="scene-priority max">MAX</div>
+    </div>
+    <div class="scene-body">
+      <h4>THE HEAD — EXTREME CLOSE-UP</h4>
+      <p>Camera starts <strong>inside the mesh's bounding sphere</strong> — almost touching the head. Only one eye, the cheek ridge, and a few polygon edges are visible. It feels like waking up inside the model. The 3–4 annotation lines are visible against the face surface directly. Name + title + CTAs appear as a fixed HUD overlay (not part of the 3D world). The z-counter at bottom-left reads <em>z = 0.000</em>.</p>
+      <p style="margin-top:8px;"><strong>v3 change:</strong> Even tighter crop than v2. Head fills 80% of viewport. Only 3 annotations on screen (not 6). The tighter framing creates a dramatic reveal when the camera begins pulling back.</p>
+      <div class="scene-3d-note">
+        <strong>3D:</strong> Existing head model. Annotation overlay via drei &lt;Html&gt; attached to vertices. Background: pure black + 200 low-opacity particles in a tight Gaussian cluster around head. No visible horizon or ground plane.
+      </div>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-0</h5>
+        <p>
+          <strong>ENTER:</strong> Instant on page load (no fade-in — the head is the first thing visible).<br>
+          <strong>DWELL:</strong> Scroll 0%–10%. Head is fully visible, annotations animate in with 0.4s stagger.<br>
+          <strong>EXIT:</strong> Scroll 10%–25%. Camera pulls back, head shrinks naturally. Annotations fade at 15%.<br>
+          <strong>DISPOSE:</strong> Never — head remains in scene as reference point throughout the entire journey. It becomes smaller but is never removed. Annotations are disposed at 25%.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-1 -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·1</div>
+      <div class="scene-year">2025</div>
+      <div class="scene-priority max">MAX</div>
+    </div>
+    <div class="scene-body">
+      <h4>GOPRO — THE STITCHING PIPELINE</h4>
+      <p>Unchanged from v2 — this is the hero scene. Dual-lens 360° camera, two equirectangular spheres (before/after), neural network graph, data flow animations. The <strong>">50% speed improvement"</strong> metric is the headline.</p>
+      <p style="margin-top:8px;">The only v3 addition: the GoPro scene objects <strong>drift in from the right of frame</strong> as the camera spirals to face their angular position. They don't just appear — they emerge from the particle fog. The camera settles into a viewing angle that frames the before/after spheres symmetrically.</p>
+      <div class="scene-3d-note">
+        <strong>3D:</strong> GoPro cam body (low poly), 2× equirectangular wireframe spheres, NN architecture graph (nodes + edges), animated flow lines (Blender → data → model → output).
+        <br><strong>Text:</strong> Left-aligned headline metric. Links: [GitHub] [Write-up] if available.
+      </div>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-1</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 8%–15%. Objects fade in from opacity 0 → 1 over 2s. They drift from world position offset (+5, 0, +3) to final position (0, 0, 0) local. Easing: easeOutCubic.<br>
+          <strong>DWELL:</strong> Scroll 15%–30%. Full visibility. Text panel readable. Flow animations loop. Spheres rotate slowly (0.2 rad/s).<br>
+          <strong>EXIT:</strong> Scroll 30%–42%. Camera spirals past. Objects now behind FOV. No fade needed — frustum culling hides them naturally.<br>
+          <strong>DISPOSE:</strong> Scroll 50%. Geometry + textures disposed. Event listeners removed. NN graph particles freed.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-2 -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·2</div>
+      <div class="scene-year">2023–25</div>
+      <div class="scene-priority">HIGH</div>
+    </div>
+    <div class="scene-body">
+      <h4>SORBONNE — RESEARCH & SCHOLARSHIP</h4>
+      <p><strong>v3 change:</strong> Removed the Eiffel Tower. It was a tourist cliché that undercut the academic seriousness of the scene. Replaced with: <strong>floating research paper pages</strong> that unfold from a folded state as the camera approaches. Each page has a visible title/abstract block (rendered as geometry, not readable text). Behind them, a <strong>neural network architecture diagram</strong> assembles node by node — synapses lighting up in sequence. A scholarship "seal" floats above: a geometric faceted medallion with "EXCELLENCE" engraved.</p>
+      <p style="margin-top:8px;"><strong>Recruiter reads:</strong> "Serious academic credentials. Research-oriented, not just framework user."</p>
+      <div class="scene-3d-note">
+        <strong>3D:</strong> 3–4 unfolding paper planes (flat quads with fold animation), NN diagram (assembles on dwell), faceted scholarship medallion. No landmarks. Clean and academic.
+      </div>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-2</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 25%–32%. Paper planes unfold from folded state. NN diagram begins assembling.<br>
+          <strong>DWELL:</strong> Scroll 32%–44%. Papers fully open. NN diagram complete. Medallion rotates slowly.<br>
+          <strong>EXIT:</strong> Scroll 44%–52%. Behind camera. Culled by frustum.<br>
+          <strong>DISPOSE:</strong> Scroll 60%. All geometry freed.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-3 -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·3</div>
+      <div class="scene-year">2022–24</div>
+      <div class="scene-priority">MED</div>
+    </div>
+    <div class="scene-body">
+      <h4>BARGME — CTO & STARTUP LEADERSHIP</h4>
+      <p>Unchanged from v2. Low-poly smartphone, barcode scanning beam, product shelf. Key story: <strong>leadership + shipping</strong>. Keep simple — this is supporting context.</p>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-3</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 40%. Smartphone fades in, scanning beam activates.<br>
+          <strong>DWELL:</strong> Scroll 45%–54%.<br>
+          <strong>EXIT:</strong> Scroll 54%. Behind frustum.<br>
+          <strong>DISPOSE:</strong> Scroll 65%.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-4 -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·4</div>
+      <div class="scene-year">2021</div>
+      <div class="scene-priority">HIGH</div>
+    </div>
+    <div class="scene-body">
+      <h4>GOOGLE DEVFEST — 1ST PRIZE + NATIONAL TV</h4>
+      <p>Unchanged from v2. Wireframe skeleton, fall detection animation, "OK" hand gesture, trophy fragments. This earns HIGH priority because of the external validation signal.</p>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-4</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 50%. Skeleton assembles bone by bone. Robot vacuum rolls in from below.<br>
+          <strong>DWELL:</strong> Scroll 55%–66%. Fall animation loops. Trophy fragments burst on first entry.<br>
+          <strong>EXIT:</strong> Scroll 66%. Behind frustum.<br>
+          <strong>DISPOSE:</strong> Scroll 78%. All skeleton + animation data freed.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-5 -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·5</div>
+      <div class="scene-year">2021</div>
+      <div class="scene-priority">MED</div>
+    </div>
+    <div class="scene-body">
+      <h4>SAMSUNG INNOVATION CAMPUS — ADAS</h4>
+      <p>Unchanged from v2. Low-poly car, MediaPipe face mesh, EAR vectors, Jetson Nano board.</p>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-5</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 62%. Car drives in from the void. Face mesh materializes on windshield.<br>
+          <strong>DWELL:</strong> Scroll 67%–76%.<br>
+          <strong>EXIT:</strong> Scroll 76%.<br>
+          <strong>DISPOSE:</strong> Scroll 85%.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-6 -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·6</div>
+      <div class="scene-year">2019</div>
+      <div class="scene-priority">EMOTIONAL</div>
+    </div>
+    <div class="scene-body">
+      <h4>ORIGIN — THE PC, THE PASSION</h4>
+      <p>Unchanged from v2. Low-poly gaming PC, glowing screen, orbiting Blender primitives. Answers: <strong>"why computer vision?"</strong> — passion since age 18.</p>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-6</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 74%. PC fades in from complete darkness. Screen glow starts dim, brightens over 1.5s.<br>
+          <strong>DWELL:</strong> Scroll 78%–86%. Primitives orbit slowly. Warm, contemplative pause.<br>
+          <strong>EXIT:</strong> Scroll 86%.<br>
+          <strong>DISPOSE:</strong> Scroll 92%.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-7: ART GALLERY -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·7</div>
+      <div class="scene-year">ART</div>
+      <div class="scene-priority" style="color:rgba(48,209,88,0.4);border-color:rgba(48,209,88,0.25);">NEW</div>
+    </div>
+    <div class="scene-body">
+      <h4>ART PORTFOLIO GALLERY — THE CREATIVE DIMENSION</h4>
+      <p><strong>New in v3.</strong> The outermost ring of the spiral opens into a gallery space. 5–8 floating rectangular frames hang in the void at slightly different depths and rotations — like a museum with no walls. Each frame contains a &lt;Html&gt; plane showing a thumbnail of a 3D artwork, animation still, or digital art piece. Hovering a frame scales it up 1.2× and shows a title + medium label below. Clicking opens the full <strong>/art</strong> page.</p>
+      <p style="margin-top:8px;">This scene serves the <strong>second goal of the website</strong>: showcasing digital art and 3D skills to creative industry visitors. It's placed after the professional content because recruiters are the primary audience — but creative visitors who scroll this far get rewarded with a curated gallery experience. The gallery also demonstrates that the 3D skills powering this website are Riad's own artistic practice, not just a tech demo.</p>
+      <div class="scene-3d-note">
+        <strong>3D:</strong> 5–8 thin box frames (0.02 depth) at varied rotations (±5° tilt). Each frame has a &lt;Html&gt; child showing an &lt;img&gt; thumbnail. Frames are evenly spaced in a gentle arc. Subtle spotlight on each from above (PointLight, low intensity, 0.3).
+        <br><strong>Text:</strong> "SELECTED WORKS" title in Bebas Neue above the gallery. Below: "[VIEW FULL GALLERY →]" link to /art page.
+      </div>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-7</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 84%. Frames fade in one by one with 0.2s stagger, drifting slightly downward into position.<br>
+          <strong>DWELL:</strong> Scroll 88%–94%. All frames visible. Hover interaction enabled.<br>
+          <strong>EXIT:</strong> N/A — this is the final scene before the conversion outro.<br>
+          <strong>DISPOSE:</strong> Only when navigating to /art page (full page transition).
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- S-8: CONVERSION -->
+  <div class="scene-row">
+    <div class="scene-stamp">
+      <div class="scene-num">S·8</div>
+      <div class="scene-year">NOW</div>
+      <div class="scene-priority max">CONVERT</div>
+    </div>
+    <div class="scene-body">
+      <h4>CONVERSION — RE-ENCODE TO THE HEAD</h4>
+      <p>Camera begins drifting back toward the head — the latent space <strong>re-encodes</strong>. The full universe of scenes is now visible simultaneously as miniature dioramas scattered along the spiral behind the camera. The head grows in the center of the frame again. Three floating CTA tiles materialize:</p>
+      <p style="margin-top:8px;">
+        <strong>[→ CHAT WITH RIAD]</strong> — primary, triggers the 3D tablet (see section 03)<br>
+        <strong>[→ DOWNLOAD CV]</strong> — secondary<br>
+        <strong>[→ VIEW ART GALLERY]</strong> — tertiary, links to /art<br>
+        <strong>[→ LINKEDIN / GITHUB]</strong> — quaternary, small icons
+      </p>
+      <p style="margin-top:8px;">Text: <em>"R&D Engineer — Computer Vision & AI. Paris. Available now."</em></p>
+      <div class="lifecycle">
+        <h5>Object Lifecycle — S-8</h5>
+        <p>
+          <strong>ENTER:</strong> Scroll 94%. CTA tiles fade in with pulse animation. Camera drifts toward head center.<br>
+          <strong>DWELL:</strong> Scroll 94%–100%. CTAs fully interactive. Head visible in background, slowly rotating.<br>
+          <strong>EXIT:</strong> N/A — end of scroll journey.<br>
+          <strong>DISPOSE:</strong> N/A.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 03 — 3D TABLET CHAT UI ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">03</div>
+    <div class="sec-title-row">
+      <h2>3D TABLET CHAT UI — IN-WORLD INTERACTION</h2>
+      <div class="tags"><span class="tag new">NEW in V3</span><span class="tag hi">Killer Feature</span></div>
+    </div>
+  </div>
+
+  <div class="g-asym">
+    <div class="cell">
+      <div class="cell-label">The Concept</div>
+      <h3>CHAT HAPPENS ON A 3D TABLET INSIDE THE SCENE</h3>
+      <p>When the user clicks <strong>[Chat with Riad]</strong> from anywhere (persistent HUD button or S-8 CTA), the following happens:</p>
+      <p style="margin-top:8px;">1. The camera smoothly interpolates to a <strong>pre-defined "chat position"</strong> in the 3D world — slightly offset from the head, facing a new direction.</p>
+      <p style="margin-top:4px;">2. A <strong>low-poly tablet</strong> (think iPad-like slab, ~300 faces, beveled edges, matte black) materializes in the void 3 units from the camera. It tilts 8° toward the camera — like someone holding it up for you to see.</p>
+      <p style="margin-top:4px;">3. The tablet's screen is a <strong>drei &lt;Html&gt; element</strong> rendered on a plane that matches the tablet's screen area. The HTML contains the full chat interface — input field, message history, suggested prompts.</p>
+      <p style="margin-top:4px;">4. <strong>3–4 suggested prompt chips</strong> float in 3D space near the tablet (not on the HTML layer — actual 3D text or &lt;Html&gt; chips hovering at ±30° angles from the tablet). They gently bob up and down. Clicking one sends that prompt to the chat.</p>
+      <p style="margin-top:8px;">5. While chatting, the <strong>head is visible in the peripheral background</strong>, slowly rotating. The particle field continues. The annotation lines are gone. It feels like you're in a research lab, asking the subject questions through a terminal.</p>
+      <br>
+      <p><strong>Why this is better than a slide-in panel:</strong> A slide-in chat panel is what every Intercom/Drift SaaS chatbot does. It's invisible — users have seen it 10,000 times and it creates zero memorable moment. The 3D tablet is a <strong>showpiece interaction</strong> that no other portfolio has. It demonstrates Three.js + HTML integration mastery. It makes the chat feel like part of the story world, not a bolted-on widget. A recruiter who opens it will remember "the portfolio where the AI chat was on a floating tablet."</p>
+      <div class="pills" style="margin-top:12px;">
+        <span class="pill bright">drei &lt;Html&gt; on plane</span>
+        <span class="pill bright">Floating prompt chips</span>
+        <span class="pill bright">Camera lerp to chat position</span>
+        <span class="pill">Mistral backend (reuse MistralMsg)</span>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">Desktop Wireframe — Chat Active</div>
+      <div class="vp desk">
+        <svg viewBox="0 0 480 270" width="100%" style="display:block;">
+          <rect width="480" height="270" fill="#060606"/>
+          <!-- Subtle particles -->
+          <circle cx="80" cy="40" r="0.8" fill="rgba(255,255,255,0.04)"/>
+          <circle cx="420" cy="200" r="1" fill="rgba(255,255,255,0.03)"/>
+          <circle cx="50" cy="180" r="0.6" fill="rgba(255,255,255,0.05)"/>
+          <circle cx="380" cy="50" r="0.7" fill="rgba(255,255,255,0.04)"/>
+          <circle cx="200" cy="240" r="0.5" fill="rgba(255,255,255,0.03)"/>
+
+          <!-- Head in background (small, distant) -->
+          <g transform="translate(100,130) scale(0.5)">
+            <polygon points="0,-28 18,-17 22,3 14,23 0,30 -14,23 -22,3 -18,-17"
+              fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.12)" stroke-width="0.8"/>
+          </g>
+
+          <!-- 3D Tablet -->
+          <g transform="translate(280,135)">
+            <!-- Tablet body (perspective trapezoid) -->
+            <path d="M -95,-78 L 95,-78 L 100,78 L -100,78 Z"
+              fill="#0C0C0C" stroke="rgba(255,255,255,0.25)" stroke-width="1.2"/>
+            <!-- Screen area (slightly inset) -->
+            <path d="M -88,-72 L 88,-72 L 92,72 L -92,72 Z"
+              fill="#080808" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+
+            <!-- Chat UI on screen -->
+            <!-- Header -->
+            <rect x="-86" y="-70" width="174" height="18" fill="rgba(255,255,255,0.03)"/>
+            <line x1="-86" y1="-52" x2="88" y2="-52" stroke="rgba(255,255,255,0.08)" stroke-width="0.5"/>
+            <circle cx="-78" cy="-61" r="2.5" fill="rgba(255,255,255,0.1)"/>
+            <text x="-72" y="-58" fill="rgba(255,255,255,0.35)" font-family="monospace" font-size="6" letter-spacing="0.08em">ASK RIAD — AI CLONE</text>
+
+            <!-- Suggested prompts at top of chat -->
+            <rect x="-82" y="-46" width="66" height="10" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.4" rx="1"/>
+            <text x="-79" y="-39" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="5">Tell me about GoPro →</text>
+
+            <rect x="-12" y="-46" width="52" height="10" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.4" rx="1"/>
+            <text x="-9" y="-39" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="5">Available when? →</text>
+
+            <rect x="44" y="-46" width="42" height="10" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="0.4" rx="1"/>
+            <text x="47" y="-39" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="5">Tech stack →</text>
+
+            <!-- User message -->
+            <rect x="12" y="-28" width="72" height="16" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.1)" stroke-width="0.4" rx="1"/>
+            <text x="16" y="-19" fill="rgba(255,255,255,0.4)" font-family="monospace" font-size="5">What did you build at</text>
+            <text x="16" y="-12" fill="rgba(255,255,255,0.4)" font-family="monospace" font-size="5">GoPro?</text>
+
+            <!-- AI response -->
+            <rect x="-82" y="-6" width="150" height="42" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="0.4" rx="1"/>
+            <line x1="-82" y1="-6" x2="-82" y2="36" stroke="rgba(255,255,255,0.2)" stroke-width="1.5"/>
+            <text x="-78" y="4" fill="rgba(255,255,255,0.3)" font-family="monospace" font-size="4.5">I built a deep learning pipeline</text>
+            <text x="-78" y="11" fill="rgba(255,255,255,0.3)" font-family="monospace" font-size="4.5">for 360° image stitching that</text>
+            <text x="-78" y="18" fill="rgba(255,255,255,0.3)" font-family="monospace" font-size="4.5">replaced the optical flow method.</text>
+            <text x="-78" y="25" fill="rgba(255,255,255,0.45)" font-family="monospace" font-size="4.5" font-weight="bold">>50% faster processing.</text>
+            <text x="-78" y="32" fill="rgba(255,255,255,0.3)" font-family="monospace" font-size="4.5">Trained on synthetic 3D data...</text>
+
+            <!-- Input field -->
+            <rect x="-86" y="50" width="174" height="16" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" rx="1"/>
+            <text x="-80" y="60" fill="rgba(255,255,255,0.15)" font-family="monospace" font-size="5">Type your question...</text>
+            <rect x="70" y="52" width="14" height="12" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="0.4" rx="1"/>
+            <text x="73" y="60" fill="rgba(255,255,255,0.3)" font-family="monospace" font-size="5">→</text>
+          </g>
+
+          <!-- Floating 3D prompt chips (outside the tablet, in 3D space) -->
+          <g transform="translate(130,80)">
+            <rect x="-44" y="-8" width="88" height="16" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5" rx="2"
+              transform="rotate(-5)"/>
+            <text x="-38" y="2" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="6" transform="rotate(-5)">Explain your 3D + AI</text>
+          </g>
+          <g transform="translate(430,90)">
+            <rect x="-40" y="-8" width="80" height="16" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)" stroke-width="0.5" rx="2"
+              transform="rotate(4)"/>
+            <text x="-34" y="2" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="6" transform="rotate(4)">What are you looking for?</text>
+          </g>
+
+          <!-- Close button top right of screen -->
+          <text x="445" y="22" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="8">[ESC]</text>
+
+          <!-- HUD elements remain -->
+          <text x="16" y="18" fill="rgba(255,255,255,0.12)" font-family="monospace" font-size="7" letter-spacing="0.12em">RIAD BOUSSOURA</text>
+          <text x="16" y="260" fill="rgba(255,255,255,0.08)" font-family="monospace" font-size="6" letter-spacing="0.1em">z = CHAT_MODE</text>
+        </svg>
+      </div>
+
+      <div class="cell-label" style="margin-top:16px;">Mobile — Chat Active</div>
+      <div class="vp phone-wrap">
+        <div class="phone-shell">
+          <div class="phone-inner">
+            <div class="ph-notch"></div>
+            <svg viewBox="0 0 110 200" width="110" style="flex-shrink:0;">
+              <rect width="110" height="200" fill="#060606"/>
+
+              <!-- Head tiny in background -->
+              <g transform="translate(55,40) scale(0.3)">
+                <polygon points="0,-28 18,-17 22,3 14,23 0,30 -14,23 -22,3 -18,-17"
+                  fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+              </g>
+
+              <!-- Tablet fills most of phone screen on mobile -->
+              <g transform="translate(55,115)">
+                <!-- Tablet body -->
+                <rect x="-48" y="-68" width="96" height="136" fill="#0A0A0A" stroke="rgba(255,255,255,0.2)" stroke-width="0.8" rx="4"/>
+                <!-- Screen -->
+                <rect x="-44" y="-64" width="88" height="128" fill="#070707" stroke="rgba(255,255,255,0.06)" stroke-width="0.4" rx="2"/>
+
+                <!-- Header -->
+                <rect x="-42" y="-62" width="84" height="14" fill="rgba(255,255,255,0.02)"/>
+                <text x="-38" y="-52" fill="rgba(255,255,255,0.3)" font-family="monospace" font-size="5">ASK RIAD — AI</text>
+
+                <!-- Prompt chips -->
+                <rect x="-40" y="-44" width="38" height="8" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.3" rx="1"/>
+                <text x="-38" y="-38" fill="rgba(255,255,255,0.2)" font-family="monospace" font-size="3.5">GoPro project</text>
+
+                <rect x="2" y="-44" width="36" height="8" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.3" rx="1"/>
+                <text x="4" y="-38" fill="rgba(255,255,255,0.2)" font-family="monospace" font-size="3.5">Availability?</text>
+
+                <!-- Messages area -->
+                <rect x="-10" y="-30" width="50" height="12" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.08)" stroke-width="0.3" rx="1"/>
+                <text x="-7" y="-23" fill="rgba(255,255,255,0.3)" font-family="monospace" font-size="3.5">What did you build?</text>
+
+                <rect x="-40" y="-14" width="70" height="40" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="0.3" rx="1"/>
+                <line x1="-40" y1="-14" x2="-40" y2="26" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+                <text x="-37" y="-5" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="3.5">Built a DL pipeline for</text>
+                <text x="-37" y="1" fill="rgba(255,255,255,0.25)" font-family="monospace" font-size="3.5">360° stitching. >50%</text>
+                <text x="-37" y="7" fill="rgba(255,255,255,0.35)" font-family="monospace" font-size="3.5" font-weight="bold">faster than baseline.</text>
+                <text x="-37" y="13" fill="rgba(255,255,255,0.2)" font-family="monospace" font-size="3.5">Synthetic dataset in</text>
+                <text x="-37" y="19" fill="rgba(255,255,255,0.2)" font-family="monospace" font-size="3.5">Blender, custom PyTorch</text>
+
+                <!-- Input -->
+                <rect x="-42" y="42" width="84" height="14" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.08)" stroke-width="0.4" rx="1"/>
+                <text x="-38" y="51" fill="rgba(255,255,255,0.12)" font-family="monospace" font-size="4">Type your question...</text>
+              </g>
+
+              <!-- Back button -->
+              <text x="8" y="14" fill="rgba(255,255,255,0.2)" font-family="monospace" font-size="5">← BACK</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="cell">
+      <div class="cell-label">Tablet 3D Specifications</div>
+      <h3>THE TABLET OBJECT</h3>
+      <p>Low-poly slab: <strong>~300 faces</strong>. Dimensions: 1.8 × 1.2 × 0.06 (Three.js units). Material: <strong>MeshStandardMaterial</strong> with roughness 0.85, metalness 0.1, color #111. Screen area: a separate mesh plane at the front face, slightly inset (z+0.031). The &lt;Html&gt; component from drei renders the chat interface on this plane. Screen emits a subtle glow (RectAreaLight, intensity 0.15, white).</p>
+      <div class="pills" style="margin-top:8px;">
+        <span class="pill">RoundedBoxGeometry</span>
+        <span class="pill">drei &lt;Html&gt; on plane</span>
+        <span class="pill">RectAreaLight glow</span>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">Transition Animation</div>
+      <h3>CAMERA LERP TO CHAT</h3>
+      <p>When chat is triggered: camera smoothly lerps from current position to chat position over <strong>1.2s</strong> (easeInOutCubic). The tablet materializes mid-transition — it scales from 0 → 1 with a slight overshoot (spring physics). Scroll control is <strong>disabled</strong> during chat mode. Press ESC or click ← to exit — camera lerps back to previous scroll position over 0.8s. Tablet scales down and vanishes.</p>
+    </div>
+    <div class="cell">
+      <div class="cell-label">Suggested Prompts</div>
+      <h3>FLOATING 3D CHIPS</h3>
+      <p>4 prompt chips float in 3D space around the tablet — not on the HTML screen. They are <strong>drei &lt;Html&gt; elements</strong> positioned at ±30° angles, slightly above and below the tablet plane. They bob gently (sin wave, 0.3 amplitude, 2s period). Clicking a chip sends it as a message and all chips animate away (scale to 0 over 0.3s). Recruiter-optimized prompts: <em>"Tell me about GoPro"</em> / <em>"What are you looking for?"</em> / <em>"Your availability?"</em> / <em>"3D + AI background"</em>.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 04 — RECRUITER FUNNEL ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">04</div>
+    <div class="sec-title-row">
+      <h2>RECRUITER CONVERSION FUNNEL</h2>
+      <div class="tags"><span class="tag hi">Core Goal</span><span class="tag changed">Updated</span></div>
+    </div>
+  </div>
+
+  <div class="g-asym-r">
+    <div class="cell">
+      <div class="cell-label">Funnel Design (Updated)</div>
+      <div class="funnel">
+        <div class="funnel-step">
+          <div class="funnel-num">1</div>
+          <div class="funnel-content">
+            <h4>HOOK — 0–5 SECONDS</h4>
+            <p><strong>v3:</strong> Even faster. The extreme close-up creates immediate curiosity ("what am I looking at?"). The auto-drift kicks in at 3.5s and the camera starts pulling back — revealing it's a face. The recruiter is now engaged without having done anything.</p>
+          </div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-num">2</div>
+          <div class="funnel-content">
+            <h4>IMPRESS — 5–30 SECONDS</h4>
+            <p>GoPro scene arrives. <strong>">50% speed improvement"</strong> visible. The spiral camera motion feels cinematic. This isn't a static portfolio — it's an experience. The recruiter is now impressed.</p>
+          </div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-num">3</div>
+          <div class="funnel-content">
+            <h4>VALIDATE — 30–90 SECONDS</h4>
+            <p>Sorbonne scholarship + hackathon win + Samsung. Three independent external validations. The recruiter now trusts the credentials.</p>
+          </div>
+        </div>
+        <div class="funnel-step">
+          <div class="funnel-num">4</div>
+          <div class="funnel-content">
+            <h4>CONNECT — THE 3D TABLET</h4>
+            <p><strong>v3:</strong> The chat is no longer a generic panel — it's a <strong>memorable showpiece</strong>. The recruiter clicks "Chat," a tablet materializes, suggested prompts float around it. They ask a question and get an instant answer. The conversion moment is itself a portfolio demonstration.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="cell" style="border-right:none;">
+      <div class="cell-label">Persistent HUD Elements</div>
+      <h3>WHAT STAYS ON SCREEN</h3>
+      <p>Unchanged from v2, these float above the 3D canvas:</p>
+      <br>
+      <p><strong>Top left:</strong> "RIAD BOUSSOURA" in 9px Space Mono. Click → return to S-0.</p>
+      <br>
+      <p><strong>Top right:</strong> [CV] and [Chat] micro-CTAs. Always reachable. [Chat] triggers the 3D tablet from any scroll position.</p>
+      <br>
+      <p><strong>Right edge:</strong> Scene ticker. Active scene highlighted. Click to jump (camera lerps along spiral to target).</p>
+      <br>
+      <p><strong>Bottom left:</strong> <em>z = 0.000 → 1.000</em> — the latent coordinate. During chat mode: <em>z = CHAT_MODE</em>.</p>
+      <br>
+      <p><strong>v3 addition — Bottom right (mobile only):</strong> Floating [Chat] button in thumb zone. 44×44px hit target minimum. Subtle pulse animation every 8s to draw attention.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 05 — AUTO-DRIFT & SCROLL ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">05</div>
+    <div class="sec-title-row">
+      <h2>AUTO-DRIFT IDLE BEHAVIOR</h2>
+      <div class="tags"><span class="tag new">NEW in V3</span></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="cell">
+      <div class="cell-label">The Problem</div>
+      <h3>"SCROLL TO DECODE" ISN'T ENOUGH</h3>
+      <p>v2 relied on a text prompt: <em>"SCROLL TO DECODE ↓"</em>. Problems: (1) On mobile, "scroll" isn't the right word — users swipe. (2) Some users don't read small text. (3) The prompt assumes users know this is a scrollable experience, not a static portfolio page. If someone lands and doesn't scroll within 5 seconds, the most important content (GoPro) is never seen.</p>
+    </div>
+    <div class="cell">
+      <div class="cell-label">The Solution</div>
+      <h3>THE CAMERA TEACHES ITSELF</h3>
+      <p>After <strong>3.5 seconds of no user input</strong> (no scroll, no touch, no mouse movement), the camera begins drifting backward along the spiral at a rate of <strong>0.5% scroll progress per second</strong>. This is slow enough to feel contemplative, not rushed. The z-counter at bottom-left begins incrementing — subtle but visible. The moment the user scrolls or touches, <strong>auto-drift stops and manual control takes over</strong>. The user now understands: scrolling controls the camera. The mechanic has been taught without any text instruction.</p>
+      <p style="margin-top:8px;">Implementation: a <code>useEffect</code> that sets an interval after 3.5s of idle. On any wheel/touch/pointermove event, clear the interval and set a flag <code>userHasInteracted = true</code>. After the first interaction, auto-drift never reactivates.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 06 — MOBILE UX ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">06</div>
+    <div class="sec-title-row">
+      <h2>MOBILE UX</h2>
+      <div class="tags"><span class="tag">40–50% Traffic</span><span class="tag changed">Chat Updated</span></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="cell">
+      <div class="cell-label">Mobile Adaptations</div>
+      <h3>SAME SPIRAL, ADAPTED CONTROLS</h3>
+      <p>Core experience unchanged: swipe up advances camera along spiral. Gyroscope tilt provides look-around. Scene content appears as bottom sheet cards (glass dark blur). Performance: pixel ratio capped at 1.5x, Draco compression, one hero object per scene, 60fps target on mid-range Android.</p>
+      <p style="margin-top:8px;"><strong>v3 change for chat:</strong> On mobile, clicking [Chat] triggers a <strong>full-screen takeover</strong>. The 3D tablet tilts to face the phone camera directly and scales up to fill the screen. The chat HTML fills the tablet's screen. The background dims to near-black. This is more practical than a tiny tablet floating in a phone viewport. Pressing ← dismisses and returns to the scroll experience.</p>
+      <div class="pills" style="margin-top:10px;">
+        <span class="pill">Swipe up = scroll</span>
+        <span class="pill">Gyro look-around</span>
+        <span class="pill">Bottom sheet cards</span>
+        <span class="pill bright">Chat = full-screen tablet</span>
+        <span class="pill">Draco compression</span>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="cell-label">Performance Budget</div>
+      <h3>GPU BUDGET PER FRAME</h3>
+      <p>Target: <strong>16.6ms per frame</strong> (60fps). Budget allocation:</p>
+      <p style="margin-top:8px;font-family:'Space Mono',monospace;font-size:10px;color:#444;line-height:2;">
+        Scene geometry: ≤ 6ms<br>
+        Particle system: ≤ 2ms<br>
+        Post-processing (none): 0ms<br>
+        HTML overlay render: ≤ 3ms<br>
+        Physics/animation: ≤ 2ms<br>
+        Buffer swap + overhead: ≤ 3.6ms
+      </p>
+      <p style="margin-top:8px;"><strong>No post-processing.</strong> No bloom, no SSAO, no DOF. The aesthetic is raw wireframe on black — it doesn't need post effects. This is the single biggest performance win: post-processing can eat 40% of the GPU budget on mobile.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 07 — BUILD PRIORITY ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">07</div>
+    <div class="sec-title-row">
+      <h2>BUILD PRIORITY (UPDATED)</h2>
+      <div class="tags"><span class="tag hi">Ship Fast</span></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="cell">
+      <div class="cell-label">Phase 1 — Launch in 3 Weeks</div>
+      <h3>THE MINIMUM VIABLE PORTFOLIO</h3>
+      <p><strong>Week 1:</strong> Head close-up + annotations + HUD (name, CTAs) + auto-drift + spiral camera with basic spline (no scenes yet, just the head pulling away into the void). Deploy this.</p>
+      <br>
+      <p><strong>Week 2:</strong> S-1 GoPro scene with full 3D objects and object lifecycle. This is the hero scene — spend the time here. Test frustum culling.</p>
+      <br>
+      <p><strong>Week 3:</strong> 3D tablet chat UI + Mistral backend. Write the system prompt. Test with friends pretending to be recruiters. Deploy.</p>
+      <br>
+      <p><strong>You now have a deployable, highly effective portfolio.</strong> Start applying to jobs.</p>
+    </div>
+    <div class="cell" style="border-right:none;">
+      <div class="cell-label">Phase 2 — While Interviewing</div>
+      <h3>ADD DEPTH ITERATIVELY</h3>
+      <p><strong>Week 4:</strong> S-2 Sorbonne + S-4 Hackathon (the two HIGH priority scenes).</p>
+      <br>
+      <p><strong>Week 5:</strong> S-3 BargMe + S-5 Samsung (MED priority — keep simple).</p>
+      <br>
+      <p><strong>Week 6:</strong> S-6 Origin + S-7 Art Gallery + S-8 Conversion.</p>
+      <br>
+      <p><strong>Ongoing:</strong> Polish animations. Add art pieces to gallery as you create them. Refine chat system prompt based on real recruiter questions. A/B test prompt chip text.</p>
+      <div class="pills" style="margin-top:14px;">
+        <span class="pill bright">Head + Spiral → Week 1</span>
+        <span class="pill bright">GoPro Scene → Week 2</span>
+        <span class="pill bright">3D Tablet Chat → Week 3</span>
+        <span class="pill">Remaining Scenes → Week 4-6</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════ 08 — TECHNICAL STACK ══════════ -->
+<div class="section">
+  <div class="sec-head">
+    <div class="sec-num">08</div>
+    <div class="sec-title-row">
+      <h2>TECHNICAL STACK SUMMARY</h2>
+      <div class="tags"><span class="tag">Implementation</span></div>
+    </div>
+  </div>
+
+  <div class="g3">
+    <div class="cell">
+      <div class="cell-label">3D Engine</div>
+      <h3>REACT THREE FIBER + DREI</h3>
+      <p><strong>R3F</strong> for the 3D scene graph. <strong>drei</strong> for Html overlays, CatmullRomCurve3 spline, Line primitives, RoundedBox (tablet). <strong>@react-three/postprocessing</strong> not used — no post effects needed.</p>
+      <p style="margin-top:8px;"><strong>Scroll driver:</strong> Lenis or native scroll with a custom scroll → spline-t mapping. Avoid ScrollControls (drei) — it's limited for spiral paths. Use a raw wheel/touch listener that increments a normalized t value (0→1) and maps it to a CatmullRom point.</p>
+    </div>
+    <div class="cell">
+      <div class="cell-label">Chat Backend</div>
+      <h3>MISTRAL API</h3>
+      <p>Reuse your <strong>Mistral Msg</strong> architecture. Next.js API route → Mistral chat completion. System prompt contains: full CV structured as JSON, GoPro project detailed writeup, availability, preferred roles, personality voice. Stream responses for perceived speed.</p>
+    </div>
+    <div class="cell">
+      <div class="cell-label">Deployment</div>
+      <h3>VERCEL + EDGE</h3>
+      <p>Next.js on <strong>Vercel</strong>. 3D assets in /public with CDN caching. Chat API as edge function for low latency. glTF models: Draco compressed, max 500KB per scene. Total initial bundle target: &lt;2MB (head + landing only). Lazy-load scene models as scroll approaches them.</p>
+    </div>
+  </div>
+</div>
+
+
+<footer>
+  STORYBOARD V3 — riadboussoura.com — LATENT SPACE — SPIRAL CAMERA + 3D TABLET CHAT — MARCH 2026
+</footer>
+
+</body>
+</html>

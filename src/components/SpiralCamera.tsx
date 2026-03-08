@@ -1,0 +1,92 @@
+'use client'
+
+import * as THREE from 'three'
+import { useRef, useMemo } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { damp3 } from 'maath/easing'
+import { useStore } from '@/store/useStore'
+
+// ─── Spiral parameters ────────────────────────────────────────────────────────
+// Archimedean spiral: 2.5 full revolutions, radius 2 → 45 Three.js units.
+// Gentle Y undulation (±2 units) gives a helix feel — like unwinding a DNA strand.
+const SPIRAL_POINTS = 80
+const SPIRAL_REVOLUTIONS = 2.5
+const SPIRAL_RADIUS_START = 2
+const SPIRAL_RADIUS_END = 45
+
+// ─── Scene focal points ───────────────────────────────────────────────────────
+// The world-space position the camera looks toward when each scene is active.
+// S-0 is the head at world origin. Remaining scenes are placeholders until
+// Phase 2 places scene objects at their spiral positions.
+export const SCENE_FOCAL_POINTS: THREE.Vector3[] = [
+  new THREE.Vector3(0, 0, 0),   // S-0 — head (permanent)
+  new THREE.Vector3(0, 0, 0),   // S-1 — GoPro       (Phase 2)
+  new THREE.Vector3(0, 0, 0),   // S-2 — Sorbonne     (Phase 2)
+  new THREE.Vector3(0, 0, 0),   // S-3 — BargMe       (Phase 2)
+  new THREE.Vector3(0, 0, 0),   // S-4 — Hackathon    (Phase 2)
+  new THREE.Vector3(0, 0, 0),   // S-5 — Samsung      (Phase 2)
+  new THREE.Vector3(0, 0, 0),   // S-6 — Origin       (Phase 2)
+  new THREE.Vector3(0, 0, 0),   // S-7 — Art Gallery  (Phase 2)
+  new THREE.Vector3(0, 0, 0),   // S-8 — Conversion   (Phase 2)
+]
+
+// ─── Chat mode positions ─────────────────────────────────────────────────────
+// Pre-defined camera placement when chatMode is true (Phase 3).
+// Offset from origin so the tablet and head are both in frame.
+export const CHAT_CAMERA_POSITION = new THREE.Vector3(4, 0.5, 4)
+export const CHAT_LOOK_AT = new THREE.Vector3(0, 0, 0)
+
+// ─── Spiral curve factory ─────────────────────────────────────────────────────
+// Exported so Phase 2 scene components can sample world-space positions along
+// the spiral without duplicating the generation logic.
+export function buildSpiralCurve(): THREE.CatmullRomCurve3 {
+  const points: THREE.Vector3[] = []
+  for (let i = 0; i < SPIRAL_POINTS; i++) {
+    const frac = i / (SPIRAL_POINTS - 1)
+    const angle = frac * SPIRAL_REVOLUTIONS * Math.PI * 2
+    const radius = SPIRAL_RADIUS_START + (SPIRAL_RADIUS_END - SPIRAL_RADIUS_START) * frac
+    const x = Math.cos(angle) * radius
+    const z = Math.sin(angle) * radius
+    const y = Math.sin(angle * 0.3) * 2  // ±2 units of vertical drift
+    points.push(new THREE.Vector3(x, y, z))
+  }
+  return new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5)
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+export function SpiralCamera() {
+  const { camera } = useThree()
+  const scrollT = useStore((s) => s.scrollT)
+  const activeScene = useStore((s) => s.activeScene)
+  const chatMode = useStore((s) => s.chatMode)
+
+  // Build the spline once; stable across re-renders
+  const curve = useMemo(() => buildSpiralCurve(), [])
+
+  // Smoothly interpolated look-at target — updated each frame toward the
+  // active scene's focal point. Stored as a ref to avoid triggering re-renders.
+  const lookAt = useRef(new THREE.Vector3(0, 0, 0))
+
+  useFrame((_, delta) => {
+    const t = Math.max(0, Math.min(1, scrollT))
+
+    if (chatMode) {
+      // Chat mode: lerp camera to the fixed chat position (Phase 3 will animate this)
+      damp3(camera.position, CHAT_CAMERA_POSITION, 0.08, delta)
+      damp3(lookAt.current, CHAT_LOOK_AT, 0.08, delta)
+    } else {
+      // Normal: follow the Catmull-Rom spiral
+      const spiralPos = curve.getPoint(t)
+      damp3(camera.position, spiralPos, 0.1, delta)
+
+      // Smoothly shift look-at toward the active scene's focal point
+      const focalPoint = SCENE_FOCAL_POINTS[activeScene] ?? SCENE_FOCAL_POINTS[0]
+      damp3(lookAt.current, focalPoint, 0.08, delta)
+    }
+
+    camera.lookAt(lookAt.current)
+  })
+
+  // Purely imperative — renders nothing
+  return null
+}

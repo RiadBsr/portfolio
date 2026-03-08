@@ -1,10 +1,10 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
-import { Environment, Center } from "@react-three/drei";
 import { Suspense } from "react";
 import * as THREE from "three";
 import { Model as HeadModel } from "@/components/Head";
+import { SpiralCamera } from "@/components/SpiralCamera";
 
 // Mute the THREE.Clock deprecation warning until @react-three/fiber updates to THREE.Timer
 if (typeof console !== 'undefined') {
@@ -19,7 +19,7 @@ if (typeof console !== 'undefined') {
 export default function Home() {
   return (
     <main style={{ width: "100vw", height: "100vh" }}>
-      <Canvas camera={{ position: [0, 0, 10], zoom: 20 }} shadows={{ type: THREE.PCFShadowMap }}>
+      <Canvas camera={{ fov: 50, near: 0.1, far: 200, position: [2, 0, 0] }} shadows={{ type: THREE.PCFShadowMap }}>
         <color attach="background" args={["#050505"]} />
 
         {/* Minimal ambient fill — keeps deep shadows */}
@@ -42,10 +42,10 @@ export default function Home() {
         {/* Subtle rim light from behind — adds depth/edge separation */}
         <pointLight position={[-1, 2, -2]} intensity={10} color="#ffffff" />
 
+        <SpiralCamera />
+
         <Suspense fallback={null}>
-          <Center>
-            <HeadModel scale={1} />
-          </Center>
+          <HeadModel scale={1} />
         </Suspense>
       </Canvas>
 
