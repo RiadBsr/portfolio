@@ -186,13 +186,15 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   // Cached isMobile flag — updated via resize listener, read every frame without DOM access
   const isMobileRef = React.useRef(false)
 
-  // Collect eyelash nodes once for fast toggle (avoids traverse on every resize)
-  const eyelashNodes = React.useMemo(() => {
+  // Store eyelash node refs for fast toggle (avoids traverse on every resize)
+  const eyelashRefs = React.useRef<THREE.Object3D[]>([])
+
+  React.useEffect(() => {
     const nodes: THREE.Object3D[] = []
     clone.traverse((node) => {
       if (node.name.toLowerCase().includes('eyelash')) nodes.push(node)
     })
-    return nodes
+    eyelashRefs.current = nodes
   }, [clone])
 
   // Disable eyelashes on mobile for performance + cache isMobile
@@ -200,12 +202,12 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     const handleResize = () => {
       const mobile = window.innerWidth < 768
       isMobileRef.current = mobile
-      for (const node of eyelashNodes) node.visible = !mobile
+      for (const node of eyelashRefs.current) node.visible = !mobile
     }
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [eyelashNodes])
+  }, [])
 
   // Resolve bone references once via getObjectByName (no traverse)
   const headBoneRef = React.useRef<THREE.Object3D | null>(null)
