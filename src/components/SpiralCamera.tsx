@@ -78,7 +78,7 @@ export function SpiralCamera() {
     // Dynamic FOV: widen on portrait screens so the head has breathing room
     const BASE_FOV = 14
     const aspect = state.size.width / state.size.height
-    const targetFov = aspect < 1 ? BASE_FOV + (1 - aspect) * 16 : BASE_FOV
+    const targetFov = aspect < 1 ? BASE_FOV + (1 - aspect) * 30 : BASE_FOV
     const cam = camera as THREE.PerspectiveCamera
     if (Math.abs(cam.fov - targetFov) > 0.5) {
       cam.fov = targetFov
