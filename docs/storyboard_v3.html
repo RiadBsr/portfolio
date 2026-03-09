@@ -646,7 +646,7 @@
           <strong>ENTER:</strong> Instant on page load (no fade-in — the head is the first thing visible).<br>
           <strong>DWELL:</strong> Scroll 0%–10%. Head is fully visible, annotations animate in with 0.4s stagger.<br>
           <strong>EXIT:</strong> Scroll 10%–25%. Camera pulls back, head shrinks naturally. Annotations fade at 15%.<br>
-          <strong>DISPOSE:</strong> Never — head remains in scene as reference point throughout the entire journey. It becomes smaller but is never removed. Annotations are disposed at 25%.
+          <strong>DISPOSE:</strong> Head goes out of view in next scene. It becomes smaller then removed. Annotations are disposed at 25%.
         </p>
       </div>
     </div>
@@ -661,19 +661,19 @@
     </div>
     <div class="scene-body">
       <h4>GOPRO — THE STITCHING PIPELINE</h4>
-      <p>Unchanged from v2 — this is the hero scene. Dual-lens 360° camera, two equirectangular spheres (before/after), neural network graph, data flow animations. The <strong>">50% speed improvement"</strong> metric is the headline.</p>
-      <p style="margin-top:8px;">The only v3 addition: the GoPro scene objects <strong>drift in from the right of frame</strong> as the camera spirals to face their angular position. They don't just appear — they emerge from the particle fog. The camera settles into a viewing angle that frames the before/after spheres symmetrically.</p>
+      <p>A new approach: A low-poly <strong>GoPro Max 360 camera</strong> sits at the center. Two half-spheres come together to close around the camera. A patch-like square then passes along the stitch line stretching all around the sphere, applying the "stitching algorithm". As this patch-based approach completes its sweep across the entire stitch band area, the visible stitch line seamlessly disappears.</p>
+      <p style="margin-top:8px;">Camera motion and layout: The objects <strong>drift in from the right of frame</strong> as the camera spirals to face their angular position. They emerge from the particle fog, settling into a cinematic view of the stitching process.</p>
       <div class="scene-3d-note">
-        <strong>3D:</strong> GoPro cam body (low poly), 2× equirectangular wireframe spheres, NN architecture graph (nodes + edges), animated flow lines (Blender → data → model → output).
-        <br><strong>Text:</strong> Left-aligned headline metric. Links: [GitHub] [Write-up] if available.
+        <strong>3D:</strong> GoPro Max cam body (low poly), two half-spheres merging, an animated patch sliding along the equator/stitch line, and a disappearing stitch seam effect.
+        <br><strong>Text:</strong> Left-aligned headline metric describing the stitching algorithm. Links: [GitHub] [Write-up] if available.
       </div>
       <div class="lifecycle">
         <h5>Object Lifecycle — S-1</h5>
         <p>
           <strong>ENTER:</strong> Scroll 8%–15%. Objects fade in from opacity 0 → 1 over 2s. They drift from world position offset (+5, 0, +3) to final position (0, 0, 0) local. Easing: easeOutCubic.<br>
-          <strong>DWELL:</strong> Scroll 15%–30%. Full visibility. Text panel readable. Flow animations loop. Spheres rotate slowly (0.2 rad/s).<br>
+          <strong>DWELL:</strong> Scroll 15%–30%. Full visibility. Half-spheres close on the camera. Patch iterates along stitch line; lines disappear as the patch completes the orbit.<br>
           <strong>EXIT:</strong> Scroll 30%–42%. Camera spirals past. Objects now behind FOV. No fade needed — frustum culling hides them naturally.<br>
-          <strong>DISPOSE:</strong> Scroll 50%. Geometry + textures disposed. Event listeners removed. NN graph particles freed.
+          <strong>DISPOSE:</strong> Scroll 50%. Geometry + textures disposed. Event listeners removed.
         </p>
       </div>
     </div>
