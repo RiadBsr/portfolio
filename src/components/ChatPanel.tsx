@@ -7,9 +7,9 @@ import { useChat, type ChatMessage } from '@/hooks/useChat'
 // ─── Suggested prompts ──────────────────────────────────────────────────────
 const SUGGESTED_PROMPTS = [
   'Tell me about yourself',
-  'What was your work at GoPro?',
-  'What are you looking for?',
-  'Your technical skills?',
+  'What did you do at GoPro?',
+  'Tell me about the hackathon win',
+  'Are you available for hire?',
 ]
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
