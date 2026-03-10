@@ -42,3 +42,28 @@ body {
   85%  { opacity: 0.5; }
   100% { opacity: 1; transform: translateX(0); }
 }
+
+/* Chat panel entrance animation */
+@keyframes chatPanelIn {
+  0%   { opacity: 0; transform: translateY(20px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Typing cursor blink */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
+}
+
+/* Pulsing dots for streaming indicator */
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 1; }
+}
+
+/* Mobile chat button — show only on small screens */
+@media (max-width: 768px) {
+  .mobile-chat-btn {
+    display: flex !important;
+  }
+}
