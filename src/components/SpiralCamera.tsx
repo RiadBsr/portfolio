@@ -36,10 +36,10 @@ export const SCENE_FOCAL_POINTS: THREE.Vector3[] = [
 ]
 
 // ─── Chat mode positions ─────────────────────────────────────────────────────
-// Pre-defined camera placement when chatMode is true (Phase 3).
-// Offset from origin so the tablet and head are both in frame.
-export const CHAT_CAMERA_POSITION = new THREE.Vector3(4, 0.5, 4)
-export const CHAT_LOOK_AT = new THREE.Vector3(0, 0, 0)
+// Camera placed close and slightly right so the head sits at ~1/3 from the
+// left edge of the viewport, leaving room for the chat panel on the right.
+export const CHAT_CAMERA_POSITION = new THREE.Vector3(0.6, 0.15, 2.2)
+export const CHAT_LOOK_AT = new THREE.Vector3(0.25, 0, 0)
 
 // ─── Spiral curve factory ─────────────────────────────────────────────────────
 // Exported so Phase 2 scene components can sample world-space positions along
