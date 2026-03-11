@@ -85,6 +85,7 @@ export function ChatPanel() {
   return (
     <div
       ref={panelRef}
+      onTouchMove={(e) => e.stopPropagation()}
       style={{
         position: 'fixed',
         bottom: 20,
@@ -102,6 +103,7 @@ export function ChatPanel() {
         overflow: 'hidden',
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
         animation: 'chatPanelIn 0.3s ease-out',
+        touchAction: 'none',
       }}
     >
       {/* ── Header ── */}
@@ -177,6 +179,7 @@ export function ChatPanel() {
 
       {/* ── Messages area ── */}
       <div
+        onTouchMove={(e) => e.stopPropagation()}
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -184,6 +187,8 @@ export function ChatPanel() {
           display: 'flex',
           flexDirection: 'column',
           gap: '12px',
+          touchAction: 'pan-y',
+          WebkitOverflowScrolling: 'touch',
         }}
       >
         {/* Suggested prompts — only shown when no messages */}

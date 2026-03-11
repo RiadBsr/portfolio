@@ -190,6 +190,7 @@ function AnnotationItem({
 
 export function Annotations() {
   const scrollT = useStore((s) => s.scrollT)
+  const chatMode = useStore((s) => s.chatMode)
   const { size } = useThree()
   const isMobile = size.width < 768
 
@@ -199,7 +200,7 @@ export function Annotations() {
     return 1 - (scrollT - FADE_START) / (FADE_END - FADE_START)
   }, [scrollT])
 
-  if (opacity <= 0) return null
+  if (opacity <= 0 || chatMode) return null
 
   return (
     <>
