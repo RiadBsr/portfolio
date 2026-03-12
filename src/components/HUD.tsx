@@ -26,6 +26,7 @@ export function HUD() {
   const activeScene = useStore((s) => s.activeScene)
   const chatMode = useStore((s) => s.chatMode)
   const setScrollT = useStore((s) => s.setScrollT)
+  const setChatMode = useStore((s) => s.setChatMode)
   const pupilDilate = useStore((s) => s.pupilDilate)
   const pupilContract = useStore((s) => s.pupilContract)
 
@@ -94,20 +95,26 @@ export function HUD() {
         >
           RESUME
         </a>
-        {/* Chat activated in Phase 3 */}
-        <span
+        <button
+          onClick={() => setChatMode(!chatMode)}
+          onMouseEnter={pupilDilate}
+          onMouseLeave={pupilContract}
           style={{
             ...mono,
             fontSize: '9px',
             letterSpacing: '0.18em',
-            color: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.04)',
+            color: chatMode ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)',
+            border: chatMode
+              ? '1px solid rgba(255,255,255,0.25)'
+              : '1px solid rgba(255,255,255,0.12)',
             padding: '4px 10px',
+            background: chatMode ? 'rgba(255,255,255,0.06)' : 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
           }}
-          title="Chat — coming in Phase 3"
         >
           CHAT
-        </span>
+        </button>
       </div>
 
       {/* ── Right edge: scene ticker ── */}
@@ -165,7 +172,35 @@ export function HUD() {
         z = {zLabel}
       </div>
 
-      {/* ── Bottom-right: mobile Chat button — Phase 3 ── */}
+      {/* ── Bottom-right: mobile Chat button ── */}
+      <button
+        onClick={() => setChatMode(!chatMode)}
+        style={{
+          position: 'absolute',
+          bottom: 20,
+          right: 20,
+          ...mono,
+          fontSize: '9px',
+          letterSpacing: '0.18em',
+          color: chatMode ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)',
+          background: chatMode
+            ? 'rgba(255,255,255,0.08)'
+            : 'rgba(8,8,8,0.6)',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: '50%',
+          width: 44,
+          height: 44,
+          display: 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          pointerEvents: 'auto',
+          backdropFilter: 'blur(8px)',
+        }}
+        className="mobile-chat-btn"
+      >
+        {chatMode ? '✕' : '💬'}
+      </button>
     </div>
   )
 }

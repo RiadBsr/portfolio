@@ -9,6 +9,7 @@ import { Particles } from "@/components/Particles";
 import { Annotations } from "@/components/Annotations";
 import { HUD } from "@/components/HUD";
 import { GoPro } from "@/components/scenes/GoPro";
+import { ChatPanel } from "@/components/ChatPanel";
 import { useScroll } from "@/hooks/useScroll";
 import { useAutoDrift } from "@/hooks/useAutoDrift";
 
@@ -79,6 +80,9 @@ export default function Home() {
 
       {/* Persistent HTML overlay — outside Canvas, always on top */}
       <HUD />
+
+      {/* AI Clone chat panel — placeholder until 3D tablet is ready */}
+      <ChatPanel />
     </main>
   );
 }
