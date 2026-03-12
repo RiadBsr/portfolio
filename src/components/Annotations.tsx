@@ -20,7 +20,7 @@ const ANNOTATIONS = [
     pos: [-0.12, 0.05, -0.12] as [number, number, number],
     label: 'DIGITAL SCULPT',
     detail: 'Low poly representation of Riad Boussoura (more smiley IRL)',
-    delay: '0.1s',
+    delay: '0.4s',
     flip: true,
   },
   {
@@ -28,7 +28,7 @@ const ANNOTATIONS = [
     pos: [0.10, -0.1, -0.12] as [number, number, number],
     label: 'SKELETAL RIG',
     detail: 'Fully rigged in Blender with pupil dilatation interactivity',
-    delay: '0.2s',
+    delay: '0.8s',
     flip: false,
   },
 ]
@@ -191,6 +191,7 @@ function AnnotationItem({
 export function Annotations() {
   const scrollT = useStore((s) => s.scrollT)
   const chatMode = useStore((s) => s.chatMode)
+  const gpuReady = useStore((s) => s.gpuReady)
   const { size } = useThree()
   const isMobile = size.width < 768
 
@@ -200,7 +201,8 @@ export function Annotations() {
     return 1 - (scrollT - FADE_START) / (FADE_END - FADE_START)
   }, [scrollT])
 
-  if (opacity <= 0 || chatMode) return null
+  // Wait until loader is done so holoReveal animations play after the scene is visible
+  if (opacity <= 0 || chatMode || !gpuReady) return null
 
   return (
     <>
