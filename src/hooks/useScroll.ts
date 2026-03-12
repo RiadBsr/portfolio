@@ -14,7 +14,7 @@ const SMOOTH_SPEED = 6
 // so the user's scroll input primarily drives scene animations
 function getScrollSpeedMultiplier(t: number): number {
   // S-1 GoPro: heavy slowdown from enter through exit transition
-  if (t >= 0.08 && t <= 0.35) return 0.2
+  if (t >= 0.08 && t <= 0.44) return 0.2
   return 1.0
 }
 
