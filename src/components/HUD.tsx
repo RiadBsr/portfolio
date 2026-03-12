@@ -51,9 +51,9 @@ export function HUD() {
           top: 20,
           left: 24,
           ...mono,
-          fontSize: '9px',
+          fontSize: '13px',
           letterSpacing: '0.22em',
-          color: 'rgba(255,255,255,0.12)',
+          color: 'rgba(255,255,255,0.5)',
           textTransform: 'uppercase',
           background: 'none',
           border: 'none',
@@ -85,12 +85,12 @@ export function HUD() {
           onMouseLeave={pupilContract}
           style={{
             ...mono,
-            fontSize: '9px',
+            fontSize: '12px',
             letterSpacing: '0.18em',
-            color: 'rgba(255,255,255,0.35)',
+            color: 'rgba(255,255,255,0.78)',
             textDecoration: 'none',
-            border: '1px solid rgba(255,255,255,0.12)',
-            padding: '4px 10px',
+            border: '1px solid rgba(255,255,255,0.22)',
+            padding: '5px 10px',
           }}
         >
           RESUME
@@ -101,14 +101,14 @@ export function HUD() {
           onMouseLeave={pupilContract}
           style={{
             ...mono,
-            fontSize: '9px',
+            fontSize: '12px',
             letterSpacing: '0.18em',
-            color: chatMode ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)',
+            color: chatMode ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)',
             border: chatMode
-              ? '1px solid rgba(255,255,255,0.25)'
-              : '1px solid rgba(255,255,255,0.12)',
-            padding: '4px 10px',
-            background: chatMode ? 'rgba(255,255,255,0.06)' : 'none',
+              ? '1px solid rgba(255,255,255,0.35)'
+              : '1px solid rgba(255,255,255,0.22)',
+            padding: '5px 10px',
+            background: chatMode ? 'rgba(255,255,255,0.1)' : 'none',
             cursor: 'pointer',
             transition: 'all 0.2s',
           }}
@@ -126,7 +126,7 @@ export function HUD() {
           transform: 'translateY(-50%)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '8px',
+          gap: '10px',
           alignItems: 'flex-end',
           pointerEvents: 'auto',
         }}
@@ -139,12 +139,12 @@ export function HUD() {
             onMouseLeave={pupilContract}
             style={{
               ...mono,
-              fontSize: '8px',
+              fontSize: '12px',
               letterSpacing: '0.12em',
               color:
                 i === activeScene
-                  ? 'rgba(255,255,255,0.5)'
-                  : 'rgba(255,255,255,0.1)',
+                  ? 'rgba(255,255,255,0.88)'
+                  : 'rgba(255,255,255,0.5)',
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -164,43 +164,13 @@ export function HUD() {
           bottom: 20,
           left: 24,
           ...mono,
-          fontSize: '10px',
+          fontSize: '12px',
           letterSpacing: '0.1em',
-          color: 'rgba(255,255,255,0.08)',
+          color: 'rgba(255,255,255,0.56)',
         }}
       >
         z = {zLabel}
       </div>
-
-      {/* ── Bottom-right: mobile Chat button ── */}
-      <button
-        onClick={() => setChatMode(!chatMode)}
-        style={{
-          position: 'absolute',
-          bottom: 20,
-          right: 20,
-          ...mono,
-          fontSize: '9px',
-          letterSpacing: '0.18em',
-          color: chatMode ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)',
-          background: chatMode
-            ? 'rgba(255,255,255,0.08)'
-            : 'rgba(8,8,8,0.6)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: '50%',
-          width: 44,
-          height: 44,
-          display: 'none',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          pointerEvents: 'auto',
-          backdropFilter: 'blur(8px)',
-        }}
-        className="mobile-chat-btn"
-      >
-        {chatMode ? '✕' : '💬'}
-      </button>
     </div>
   )
 }

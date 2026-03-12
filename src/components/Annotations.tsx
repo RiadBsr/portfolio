@@ -34,11 +34,11 @@ const ANNOTATIONS = [
 ]
 
 const FADE_START = 0.04
-const FADE_END = 0.18
+const FADE_END = 0.08
 
-const LINE_COLLAPSED = 28
-const LINE_EXPANDED = 64
-const LINE_MOBILE = 18
+const LINE_COLLAPSED = 34
+const LINE_EXPANDED = 72
+const LINE_MOBILE = 26
 
 // Shared invisible material and geometry for hover hitboxes (allocated once)
 const invisibleMat = /* @__PURE__ */ new THREE.MeshBasicMaterial({ visible: false })
@@ -123,23 +123,23 @@ function AnnotationItem({
                   y1="0"
                   x2={flip ? 0 : lineW}
                   y2="0"
-                  stroke="rgba(255,255,255,0.2)"
+                  stroke="rgba(255,255,255,0.5)"
                   strokeWidth="0.8"
                 />
                 <circle
                   cx={flip ? lineW : 0}
                   cy="0"
                   r={isMobile ? 1.5 : 1.8}
-                  fill={hovered ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)'}
+                  fill={hovered ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.72)'}
                   style={{ transition: 'fill 0.3s ease' }}
                 />
               </svg>
               <span
                 style={{
                   fontFamily: 'var(--font-space-mono, monospace)',
-                  fontSize: isMobile ? '7px' : '8px',
+                  fontSize: isMobile ? '10px' : '12px',
                   letterSpacing: isMobile ? '0.12em' : '0.18em',
-                  color: hovered ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.45)',
+                  color: hovered ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.8)',
                   textTransform: 'uppercase',
                   userSelect: 'none',
                   whiteSpace: 'nowrap',
@@ -156,7 +156,7 @@ function AnnotationItem({
               <div
                 style={{
                   overflow: 'hidden',
-                  maxHeight: hovered ? '30px' : '0px',
+                  maxHeight: hovered ? '42px' : '0px',
                   opacity: hovered ? 1 : 0,
                   transition:
                     'max-height 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease',
@@ -168,9 +168,9 @@ function AnnotationItem({
                 <span
                   style={{
                     fontFamily: 'var(--font-space-mono, monospace)',
-                    fontSize: '6.5px',
+                    fontSize: '9.5px',
                     letterSpacing: '0.08em',
-                    color: 'rgba(255,255,255,0.3)',
+                    color: 'rgba(255,255,255,0.72)',
                     userSelect: 'none',
                     whiteSpace: 'nowrap',
                     display: 'block',

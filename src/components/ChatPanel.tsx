@@ -130,9 +130,9 @@ export function ChatPanel() {
           <span
             style={{
               ...mono,
-              fontSize: '9px',
+              fontSize: '12px',
               letterSpacing: '0.22em',
-              color: 'rgba(255, 255, 255, 0.5)',
+              color: 'rgba(255, 255, 255, 0.84)',
               textTransform: 'uppercase',
             }}
           >
@@ -145,13 +145,13 @@ export function ChatPanel() {
               onClick={() => clearChat()}
               style={{
                 ...mono,
-                fontSize: '8px',
+                fontSize: '11px',
                 letterSpacing: '0.12em',
-                color: 'rgba(255, 255, 255, 0.25)',
+                color: 'rgba(255, 255, 255, 0.7)',
                 background: 'none',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                border: '1px solid rgba(255, 255, 255, 0.18)',
                 borderRadius: '4px',
-                padding: '3px 8px',
+                padding: '4px 9px',
                 cursor: 'pointer',
               }}
             >
@@ -162,13 +162,13 @@ export function ChatPanel() {
             onClick={handleClose}
             style={{
               ...mono,
-              fontSize: '8px',
+              fontSize: '11px',
               letterSpacing: '0.12em',
-              color: 'rgba(255, 255, 255, 0.3)',
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              color: 'rgba(255, 255, 255, 0.72)',
+              background: 'rgba(255, 255, 255, 0.07)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
               borderRadius: '4px',
-              padding: '3px 8px',
+              padding: '4px 9px',
               cursor: 'pointer',
             }}
           >
@@ -230,10 +230,10 @@ export function ChatPanel() {
                   onClick={() => handlePromptClick(prompt)}
                   style={{
                     ...mono,
-                    fontSize: '10px',
-                    color: 'rgba(255, 255, 255, 0.45)',
+                    fontSize: '11px',
+                    color: 'rgba(255, 255, 255, 0.62)',
                     background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.18)',
                     borderRadius: '20px',
                     padding: '6px 14px',
                     cursor: 'pointer',
@@ -316,15 +316,15 @@ export function ChatPanel() {
           disabled={!input.trim() || isStreaming}
           style={{
             ...mono,
-            fontSize: '10px',
+            fontSize: '11px',
             letterSpacing: '0.1em',
             color: !input.trim() || isStreaming
-              ? 'rgba(255, 255, 255, 0.15)'
-              : 'rgba(255, 255, 255, 0.8)',
+              ? 'rgba(255, 255, 255, 0.34)'
+              : 'rgba(255, 255, 255, 0.88)',
             background: !input.trim() || isStreaming
-              ? 'rgba(255, 255, 255, 0.03)'
-              : 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+              ? 'rgba(255, 255, 255, 0.06)'
+              : 'rgba(255, 255, 255, 0.12)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '8px',
             padding: '10px 16px',
             cursor: !input.trim() || isStreaming ? 'default' : 'pointer',
