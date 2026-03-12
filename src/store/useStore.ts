@@ -5,7 +5,7 @@ import { create } from 'zustand'
 // Scene activation boundaries — the scrollT value at which each scene
 // becomes the "active" scene (drives camera look-at focal point).
 // Aligned with storyboard enter-start percentages.
-const SCENE_BOUNDARIES = [0, 0.08, 0.42, 0.50, 0.58, 0.66, 0.74, 0.84, 0.94] as const
+const SCENE_BOUNDARIES = [0, 0.14, 0.42, 0.50, 0.58, 0.66, 0.74, 0.84, 0.94] as const
 
 function computeActiveScene(t: number): number {
   for (let i = SCENE_BOUNDARIES.length - 1; i >= 0; i--) {

@@ -9,6 +9,7 @@ import { Particles } from "@/components/Particles";
 import { Annotations } from "@/components/Annotations";
 import { HUD } from "@/components/HUD";
 import { GoPro } from "@/components/scenes/GoPro";
+import { DevOverlay } from "@/components/DevOverlay";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useScroll } from "@/hooks/useScroll";
 import { useAutoDrift } from "@/hooks/useAutoDrift";
@@ -77,6 +78,9 @@ export default function Home() {
           <GoPro />
         </Suspense>
       </Canvas>
+
+      {/* WIP overlay — blurs canvas after last finished scene (update fromScrollT as scenes ship) */}
+      <DevOverlay fromScrollT={0.14} />
 
       {/* Persistent HTML overlay — outside Canvas, always on top */}
       <HUD />

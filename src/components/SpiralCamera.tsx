@@ -31,7 +31,7 @@ function computeScenePosition(spiralT: number, inwardOffset: number): THREE.Vect
 }
 
 export const SCENE_POSITIONS: Record<number, THREE.Vector3> = {
-  1: computeScenePosition(0.27, 5), // S-1 GoPro — dwell midpoint t=0.27, 5 units inward
+  1: computeScenePosition(0.30, 5), // S-1 GoPro — dwell midpoint t=0.30, 5 units inward
 }
 
 // Computes a Y-rotation that makes the scene face the camera at its dwell midpoint

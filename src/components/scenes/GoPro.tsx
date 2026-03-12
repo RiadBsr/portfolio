@@ -8,8 +8,8 @@ import { useSceneLifecycle, type SceneLifecycleState } from '@/hooks/useSceneLif
 import { SCENE_POSITIONS, computeSceneFacingAngle } from '@/components/SpiralCamera'
 
 const LIFECYCLE = {
-  enterStart: 0.08,
-  enterEnd: 0.14,
+  enterStart: 0.14,
+  enterEnd: 0.20,
   exitStart: 0.40,
   disposeAt: 0.55,
 }
