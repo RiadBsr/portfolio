@@ -11,6 +11,8 @@ import { HUD } from "@/components/HUD";
 import { GoPro } from "@/components/scenes/GoPro";
 import { DevOverlay } from "@/components/DevOverlay";
 import { ChatPanel } from "@/components/ChatPanel";
+import { Loader } from "@/components/Loader";
+import { GPUWarmup } from "@/components/GPUWarmup";
 import { useScroll } from "@/hooks/useScroll";
 import { useAutoDrift } from "@/hooks/useAutoDrift";
 
@@ -68,16 +70,16 @@ export default function Home() {
         {/* S-0 face annotations — fade out and unmount as camera pulls back */}
         <Annotations />
 
-        {/* Head model — never removed; camera orbits around it */}
+        {/* All async assets (GLTFs, textures) under one Suspense — Loader shows progress */}
         <Suspense fallback={null}>
           <HeadModel scale={1} />
-        </Suspense>
-
-        {/* S-1: GoPro stitching pipeline scene */}
-        <Suspense fallback={null}>
           <GoPro />
+          <GPUWarmup />
         </Suspense>
       </Canvas>
+
+      {/* Loading screen — shows progress while GLTFs + textures load, fades out */}
+      <Loader />
 
       {/* WIP overlay — blurs canvas after last finished scene (update fromScrollT as scenes ship) */}
       <DevOverlay fromScrollT={0.14} />

@@ -209,3 +209,5 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
 }
 
 useGLTF.preload('/models/gopro.glb')
+useTexture.preload('/textures/360.jpg')
+useTexture.preload('/textures/360_unaligned.jpg')
