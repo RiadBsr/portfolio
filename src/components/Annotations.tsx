@@ -191,6 +191,7 @@ function AnnotationItem({
 export function Annotations() {
   const scrollT = useStore((s) => s.scrollT)
   const chatMode = useStore((s) => s.chatMode)
+  const gpuReady = useStore((s) => s.gpuReady)
   const { size } = useThree()
   const isMobile = size.width < 768
 
@@ -200,7 +201,8 @@ export function Annotations() {
     return 1 - (scrollT - FADE_START) / (FADE_END - FADE_START)
   }, [scrollT])
 
-  if (opacity <= 0 || chatMode) return null
+  // Wait until loader is done so holoReveal animations play after the scene is visible
+  if (opacity <= 0 || chatMode || !gpuReady) return null
 
   return (
     <>
