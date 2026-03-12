@@ -32,6 +32,7 @@ src/
     Particles.tsx         # 200 ambient particles (Gaussian distribution)
     Annotations.tsx       # S-0 face annotations with hologram reveal, fade-out on scroll
     HUD.tsx               # Persistent HTML overlay — name, resume CTA, scene ticker, z-counter
+    DevOverlay.tsx         # Reusable WIP overlay — blurs canvas + shows message after last finished scene
     scenes/
       GoPro.tsx           # S-1 GoPro scene — dual hemispheres, 360° textures, wireframe, lifecycle
   hooks/
@@ -60,6 +61,7 @@ docs/
 - **Scene lifecycle** managed via `useSceneLifecycle` hook — returns phase (`idle`/`entering`/`dwelling`/`exiting`/`disposed`), progress values, and visibility. Scene components split into outer guard (lifecycle check) and inner renderer (hooks + GLTF).
 - **Scroll speed zones** in `useScroll.ts` — `getScrollSpeedMultiplier(t)` returns a per-scene speed factor. Scene dwell ranges use 0.2x multiplier so scroll mainly drives scene animations, not camera movement.
 - **Mobile adaptations:** gyroscope replaces cursor input, eyelashes hidden below 768px, dynamic FOV on portrait screens, touch events get 2x multiplier.
+- **DevOverlay (WIP gate):** `<DevOverlay fromScrollT={0.14} />` in `page.tsx` blurs the canvas and shows "WORK IN PROGRESS" when scrollT crosses the threshold. **When a new scene is finished**, update `fromScrollT` to the `enterStart` of the next unfinished scene. When all scenes are complete, remove the component entirely. The overlay sits at `zIndex: 5` (below HUD at 10, above canvas).
 
 ## Gotchas
 
@@ -86,6 +88,6 @@ docs/
 
 ## Deployment Rules
 
-- **"Under development" notice is REQUIRED** after every major phase deployment. Before deploying, add a subtle indicator in the HUD (bottom-center or bottom-right) that tells visitors upcoming features are in progress — e.g. `"MORE COMING SOON"` or `"WORK IN PROGRESS"`. Style it consistently with the existing HUD aesthetic (Space Mono, low-opacity, uppercase). Update or remove the notice as phases are completed.
+- **"Under development" notice is REQUIRED** after every major phase deployment. This is handled by the `<DevOverlay fromScrollT={...} />` component in `page.tsx`. It blurs the canvas and shows "WORK IN PROGRESS" / "MORE SCENES COMING SOON" once the user scrolls past the last finished scene. **When shipping a new scene**, update the `fromScrollT` prop to the `enterStart` value of the next unfinished scene. When all scenes are done, remove the component.
 - Always run `npm run build` before deploying to catch errors.
 - Each phase must be independently deployable — no broken UI or dead links to unfinished features (e.g. the CHAT button is greyed out until Phase 3 is live).

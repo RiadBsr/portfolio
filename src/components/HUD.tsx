@@ -7,7 +7,7 @@ import { useStore } from '@/store/useStore'
 // Target values are the dwell midpoints from the storyboard.
 const SCENES = [
   { label: 'S·0', t: 0 },
-  { label: 'S·1', t: 0.11 },
+  { label: 'S·1', t: 0.17 },
   { label: 'S·2', t: 0.28 },
   { label: 'S·3', t: 0.43 },
   { label: 'S·4', t: 0.53 },
