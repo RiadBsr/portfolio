@@ -1,54 +1,91 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
 ## Commands
 
 ```bash
-npm run dev      # Start dev server at localhost:3000
-npm run build    # Production build
-npm run lint     # Run ESLint
+npm run dev      # Start dev server (localhost:3000)
+npm run build    # Production build — run after any change to verify
+npm run lint     # ESLint (next/core-web-vitals + typescript)
 ```
 
-No test suite is configured.
+No test suite. Verify changes with `npm run build` (catches type errors, unused imports, SSR issues).
 
 ## Architecture
 
-Single-page Next.js 15 app (App Router) with a full-viewport Three.js scene as the main content.
+Single-page Next.js 16 portfolio (App Router) — full-viewport Three.js scene as the sole content. Camera orbits an interactive 3D head along an Archimedean spiral driven by scroll progress.
 
-**Key stack:** React 19, TypeScript, Three.js + `@react-three/fiber` + `@react-three/drei`, GSAP, Lenis, Zustand, Tailwind CSS v4, `maath`.
+**Stack:** React 19, TypeScript strict, Three.js r183, @react-three/fiber 9, @react-three/drei 10, GSAP 3, Zustand 5, Tailwind CSS v4, maath, Lenis.
 
-**Path alias:** `@/*` → `./src/*`
+**Path alias:** `@/*` maps to `./src/*`
 
 ### File structure
 
 ```
 src/
   app/
-    layout.tsx      # Root layout — Geist font, metadata
-    page.tsx        # Home page — R3F Canvas setup, lighting rig, UI overlay
-    globals.css     # Global reset + CSS variables (dark theme, overflow:hidden)
+    layout.tsx            # Root layout — fonts (Geist, Space Mono, Bebas Neue, DM Sans)
+    page.tsx              # Home — R3F Canvas, lighting, hooks, HUD overlay
+    globals.css           # Dark theme, overflow:hidden, CSS design tokens, holoReveal keyframes
   components/
-    Head.tsx        # Interactive 3D head model (the core visual)
+    Head.tsx              # Interactive 3D head — wireframe, cursor/gyro tracking, blink, pupil dilation
+    SpiralCamera.tsx      # Camera path — Archimedean spiral, scene focal points, chat mode position
+    Particles.tsx         # 200 ambient particles (Gaussian distribution)
+    Annotations.tsx       # S-0 face annotations with hologram reveal, fade-out on scroll
+    HUD.tsx               # Persistent HTML overlay — name, resume CTA, scene ticker, z-counter
+    scenes/
+      GoPro.tsx           # S-1 GoPro scene — dual hemispheres, 360° textures, wireframe, lifecycle
+  hooks/
+    useScroll.ts          # Virtual scroll (wheel + touch), exponential smoothing, 6000px virtual distance
+    useAutoDrift.ts       # Auto-drift on idle (3.5s delay, 0.5%/s), stops permanently on first interaction
+    useSceneLifecycle.ts  # Reusable scene lifecycle hook — phase, progress, visibility from scrollT
+  store/
+    useStore.ts           # Zustand: scrollT, activeScene, chatMode, userHasInteracted, pupilDilateCount
 public/
-  models/
-    head.glb        # GLTF model with skeleton, BlinkAction animation, materials
+  models/head.glb         # Head GLTF (skeleton, BlinkAction animation)
+  models/gopro.glb        # GoPro model (Phase 2)
+  textures/360.jpg        # 360 photo texture (Phase 2)
+  resume.pdf
+docs/
+  PLAN.md                 # Detailed 3-phase implementation plan — source of truth for roadmap
+  research.md             # Scene research notes — reference for Phase 2-3 content
 ```
 
-### Head.tsx — core component
+## Key Patterns
 
-The `Model` component in `Head.tsx` is the entire visual centerpiece. Key implementation details:
+- **All components are `'use client'`** — single-page SPA with no server components beyond layout.
+- **State flows through Zustand** — `useStore.ts` is the single store. Components subscribe to individual selectors to avoid re-renders.
+- **Pupil dilation is ref-counted** — call `pupilDilate()` on hover enter, `pupilContract()` on hover leave. Never set directly. Supports overlapping hovers.
+- **`useFrame` for all per-frame logic** — cursor tracking, camera movement, morph targets. Uses `dampQ`/`damp3`/`damp` from `maath/easing` for smooth interpolation.
+- **Scene boundaries** defined in `useStore.ts` (`SCENE_BOUNDARIES` array). Scene focal points and positions in `SpiralCamera.tsx` (`SCENE_FOCAL_POINTS`, `SCENE_POSITIONS`).
+- **Scene lifecycle** managed via `useSceneLifecycle` hook — returns phase (`idle`/`entering`/`dwelling`/`exiting`/`disposed`), progress values, and visibility. Scene components split into outer guard (lifecycle check) and inner renderer (hooks + GLTF).
+- **Scroll speed zones** in `useScroll.ts` — `getScrollSpeedMultiplier(t)` returns a per-scene speed factor. Scene dwell ranges use 0.2x multiplier so scroll mainly drives scene animations, not camera movement.
+- **Mobile adaptations:** gyroscope replaces cursor input, eyelashes hidden below 768px, dynamic FOV on portrait screens, touch events get 2x multiplier.
 
-- **Skeletal wireframe overlay:** `createSharpEdgeGeometry` extracts boundary/hard edges from skinned mesh geometry (edges appearing only once in the index buffer). These are rendered as `THREE.LineSegments` with a custom `ShaderMaterial` that supports skinning via duck-typing (`isSkinnedMesh`, `skeleton`, `bindMatrix`, `bindMatrixInverse`) so WebGLRenderer uploads bone matrices.
-- **Cursor tracking:** `useFrame` reads `state.pointer` (normalized -1 to 1) and applies damped quaternion rotation to the `Head`, `eyeL001`, and `eyeR001` bones via `dampQ` from `maath/easing`. Eye rotation is composed on top of saved rest quaternions.
-- **Gyroscope (mobile):** `DeviceOrientationEvent` listener normalizes `beta`/`gamma` into the same -1/1 range as `state.pointer`, used instead of cursor when on mobile + gyro available.
-- **Blink animation:** `THREE.AnimationMixer` plays the `BlinkAction` clip filtered to only lid/eyelash bone tracks. Triggered randomly every 2–6s with a 15% chance of a double-blink.
-- **Performance:** Eyelashes hidden on `window.innerWidth < 768`. Frustum culling disabled on all meshes.
-- **Materials:** `Black`-named material replaced with flat unlit `MeshBasicMaterial`; `polygonOffset` used on all mesh materials to prevent Z-fighting with the wireframe lines.
+## Gotchas
 
-### Lighting (page.tsx)
+- **Wireframe skinning hack:** `Head.tsx` duck-types `LineSegments` as `isSkinnedMesh` so Three.js uploads bone matrices. Do not refactor without understanding `createSharpEdgeGeometry`.
+- **polygonOffset on all mesh materials** prevents Z-fighting between mesh surfaces and wireframe overlay. Must be preserved on any new materials.
+- **Three.js r183 deprecation warnings** are suppressed in `page.tsx` (`console.warn` filter). Remove when R3F updates its internals.
+- **Auto-drift vs scroll ownership:** `useAutoDrift` owns `scrollT` until `userHasInteracted` is true, then `useScroll` takes over. On handoff, `useScroll` syncs its accumulator from the store to prevent jumps.
+- **GLTF clone + skeleton rebind** in `Head.tsx` is required because `useGLTF` caches the scene. Each mount clones and rebinds skeletons manually.
+- **Scene-based culling:** As the camera progresses along the spiral, objects from 2+ scenes away are culled and disabled for optimization. `frustumCulled = false` is only used on the Head meshes (to prevent popping artifacts during the close-up orbit); other scene objects use standard frustum culling.
 
-- `ambientLight` intensity 0.1 (minimal fill)
-- `spotLight` from above-front for dramatic key light
-- `pointLight` rim light from behind-left
-- Shadow type: `THREE.PCFShadowMap`
+## Project Status
+
+- **Phase 1 (COMPLETE):** Head scene, spiral camera, scroll/drift, HUD, annotations, particles.
+- **Phase 2 (IN PROGRESS):** S-1 GoPro scene implemented with lifecycle, focal points, scroll slowdown. Remaining scenes: Sorbonne, BargMe, Hackathon, Samsung, Origin, Art Gallery, Conversion. See `docs/PLAN.md`.
+- **Phase 3 (NOT STARTED):** Chat UI + Mistral LLM integration. See `docs/PLAN.md`.
+
+## Conventions
+
+- Use `'use client'` directive at top of every component/hook file.
+- Prefer `useRef` over `useState` for values read in `useFrame` (avoids re-renders).
+- Allocate Three.js objects (Vector3, Quaternion, Object3D) outside components or in `useMemo` — never inside `useFrame`.
+- Font variables: `--font-space-mono` (HUD/labels), `--font-geist-sans` (body), `--font-bebas` (headings), `--font-dm-sans` (UI).
+- Design tokens in `globals.css` (`:root` block): `--black`, `--white`, `--wire`, `--accent`, etc.
+
+## Deployment Rules
+
+- **"Under development" notice is REQUIRED** after every major phase deployment. Before deploying, add a subtle indicator in the HUD (bottom-center or bottom-right) that tells visitors upcoming features are in progress — e.g. `"MORE COMING SOON"` or `"WORK IN PROGRESS"`. Style it consistently with the existing HUD aesthetic (Space Mono, low-opacity, uppercase). Update or remove the notice as phases are completed.
+- Always run `npm run build` before deploying to catch errors.
+- Each phase must be independently deployable — no broken UI or dead links to unfinished features (e.g. the CHAT button is greyed out until Phase 3 is live).

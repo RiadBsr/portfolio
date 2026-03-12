@@ -8,6 +8,7 @@ import { SpiralCamera } from "@/components/SpiralCamera";
 import { Particles } from "@/components/Particles";
 import { Annotations } from "@/components/Annotations";
 import { HUD } from "@/components/HUD";
+import { GoPro } from "@/components/scenes/GoPro";
 import { useScroll } from "@/hooks/useScroll";
 import { useAutoDrift } from "@/hooks/useAutoDrift";
 
@@ -68,6 +69,11 @@ export default function Home() {
         {/* Head model — never removed; camera orbits around it */}
         <Suspense fallback={null}>
           <HeadModel scale={1} />
+        </Suspense>
+
+        {/* S-1: GoPro stitching pipeline scene */}
+        <Suspense fallback={null}>
+          <GoPro />
         </Suspense>
       </Canvas>
 

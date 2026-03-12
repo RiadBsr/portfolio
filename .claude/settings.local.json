@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(grep -E '\\\\.\\(ts|tsx|js|json|css|glb|png|jpg|md\\)$')",
+      "WebSearch",
+      "WebFetch(domain:www.humanlayer.dev)",
+      "WebFetch(domain:claude.com)",
+      "Bash(npm run build)",
+      "Bash(node -e \":*)"
     ]
   }
 }

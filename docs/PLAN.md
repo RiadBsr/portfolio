@@ -230,15 +230,21 @@ A `<group>` rendered inside the Canvas, positioned at `scenePositions[1]`. All c
 
 **Internal structure:**
 
-1. **GoPro camera body.** A `<RoundedBox>` from drei (args ~`[0.6, 0.4, 0.3]`) with a dark `MeshStandardMaterial`. Two `<Cylinder>` lens barrels on the front face. Simple — this is a silhouette, not a product render.
+1. **GoPro Max 2 Camera.** Render the imported low-poly `gopro` GLTF model at the center of the scene.
 
-2. **Two equirectangular spheres.** `<Sphere args={[1.5, 24, 24]}>` with `wireframe: true`. Left sphere: dim white wireframe (opacity 0.08). Right sphere: brighter wireframe (opacity 0.25). Both rotate on Y in `useFrame`. Positioned symmetrically left/right of the GoPro body, ~3 units apart.
+2. **FRNT and BACK Half-Spheres.** Use the imported `FRNT` and `BACK` half-sphere models. They animate to close around the central camera. 
+   - Apply the **same wireframe visual effect** as the first scene's head (e.g., using `createSharpEdgeGeometry` combined with a custom wireframe shader overlay).
+   - Render the `360.jpg` texture on the FRNT half-sphere.
+   - Render the `360_unaligned.jpg` texture on the BACK half-sphere initially, so the misaligned seam is visibly pronounced at the equator.
 
-3. **Neural network graph.** A set of ~15 `<Sphere args={[0.08, 8, 8]}>` nodes arranged in 4 columns (input → hidden → hidden → output). Connected by `<Line>` from drei (each edge is a straight 2-point line). During dwell, animated flow dots (a small bright sphere per edge) travel from input to output using parametric `t` updated in `useFrame` with modulo wrapping.
+3. **Stitching Animation & Patch.** A patch-like square geometry passes along the equator/stitch line of the combined spheres. 
+   - A custom shader on the BACK half-sphere reads the patch's sweep progression.
+   - As the patch sweeps over the seam, the shader gradually interpolates the BACK's texture from `360_unaligned.jpg` to `360.jpg` (the perfect continuation).
+   - Once the sweep completes, the visible stitch/seam disappears completely.
 
 4. **Text panel.** drei `<Html>` positioned to the left of the group. Contains:
-   - Headline: ">50% Speed Improvement" in Bebas Neue
-   - Subtext: one sentence about the stitching pipeline
+   - Headline: "Dual Fisheye 360 image stitching using DeepLearning" in Bebas Neue
+   - Subtext: Brief description of the patch-based stitching pipeline and alignment strategy (>50% Speed Improvement)
    - Links: [GitHub] [Write-up] (placeholder hrefs for now)
    - Font: DM Sans for body, Space Mono for labels
    - All styled with the storyboard's color tokens
@@ -247,10 +253,10 @@ A `<group>` rendered inside the Canvas, positioned at `scenePositions[1]`. All c
 
 - Call `useSceneLifecycle({ enterStart: 0.08, enterEnd: 0.15, exitStart: 0.30, disposeAt: 0.50 })`.
 - If `shouldMount` is false, return `null`.
-- During `entering` phase: GSAP-animate the group's position from `(+5, 0, +3)` offset to `(0, 0, 0)` local, and a material opacity uniform from 0 to 1, using `enterProgress` as the driver. Use `useGSAP` from `@gsap/react`.
-- During `dwelling`: flow dots animate, spheres rotate, text is fully readable.
-- During `exiting`: no explicit animation — the spiral camera simply turns away and frustum culling hides the objects.
-- At `disposed`: component unmounts → React cleanup runs → Three.js objects are garbage collected. No manual `.dispose()` calls needed since the geometries are declarative R3F elements (R3F handles cleanup on unmount).
+- During `entering` phase: GSAP-animate the group's position from `(+5, 0, +3)` offset to `(0, 0, 0)` local. Use `enterProgress` as the driver.
+- During `dwelling`: Half-spheres close in around the camera, patch sweeps along the stitch line, and BACK texture seamlessly updates via uniform driver. Text is fully readable.
+- During `exiting`: Camera spirals past. Objects naturally fall behind FOV (frustum culled).
+- At `disposed`: component unmounts → React cleanup runs.
 
 ### Step 4 — Verify Frustum Culling
 

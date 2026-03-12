@@ -10,6 +10,14 @@ const VIRTUAL_HEIGHT = 6000
 // Exponential smoothing speed (higher = snappier camera feel).
 const SMOOTH_SPEED = 6
 
+// Scene-aware scroll speed — dramatically slow down in dwell ranges
+// so the user's scroll input primarily drives scene animations
+function getScrollSpeedMultiplier(t: number): number {
+  // S-1 GoPro: heavy slowdown from enter through exit transition
+  if (t >= 0.08 && t <= 0.35) return 0.2
+  return 1.0
+}
+
 export function useScroll() {
   const setScrollT = useStore((s) => s.setScrollT)
   const setUserHasInteracted = useStore((s) => s.setUserHasInteracted)
@@ -54,9 +62,11 @@ export function useScroll() {
       if (useStore.getState().chatMode) return
       syncFromStore()
       setUserHasInteracted(true)
+      const currentT = targetRef.current / VIRTUAL_HEIGHT
+      const speed = getScrollSpeedMultiplier(currentT)
       targetRef.current = Math.max(
         0,
-        Math.min(VIRTUAL_HEIGHT, targetRef.current + e.deltaY)
+        Math.min(VIRTUAL_HEIGHT, targetRef.current + e.deltaY * speed)
       )
     }
 
@@ -71,10 +81,12 @@ export function useScroll() {
       touchYRef.current = e.touches[0].clientY
       syncFromStore()
       setUserHasInteracted(true)
+      const currentT = targetRef.current / VIRTUAL_HEIGHT
+      const speed = getScrollSpeedMultiplier(currentT)
       // ×2 multiplier so touch swipe feels as responsive as wheel
       targetRef.current = Math.max(
         0,
-        Math.min(VIRTUAL_HEIGHT, targetRef.current + deltaY * 2)
+        Math.min(VIRTUAL_HEIGHT, targetRef.current + deltaY * 2 * speed)
       )
     }
 

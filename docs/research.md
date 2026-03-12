@@ -169,7 +169,7 @@ NOTE: the head's origin is the nose tip.
 
 3. **Particle cloud** (`src/components/Particles.tsx`): 200 particles in a tight Gaussian cluster around the head. Pure black background + low-opacity white dots (`Points` geometry, `PointsMaterial`). They should extend further into space as the camera pulls back.
 
-4. **Object lifecycle**: Annotations dispose (remove from DOM) at 25% scroll. The head itself is never disposed — it remains as a reference point throughout the entire journey, just growing smaller as the camera spirals out.
+4. **Object lifecycle**: Annotations dispose (remove from DOM) at 25% scroll. Head goes out of view naturally in next scene.
 
 ---
 

@@ -19,13 +19,26 @@ const SPIRAL_RADIUS_START = 1.3
 const SPIRAL_RADIUS_END = 45
 const SPIRAL_ANGLE_OFFSET = Math.PI / 2 // start in front of head (+Z direction)
 
+// ─── Scene positions ──────────────────────────────────────────────────────────
+// World-space positions where scene objects are placed along the spiral.
+// Computed by sampling the spiral curve at each scene's dwell midpoint,
+// then offsetting inward toward the origin so the camera orbits past them.
+const _spiralCurve = buildSpiralCurve()
+function computeScenePosition(spiralT: number, inwardOffset: number): THREE.Vector3 {
+  const pt = _spiralCurve.getPoint(spiralT)
+  const toOrigin = pt.clone().normalize().negate()
+  return pt.clone().addScaledVector(toOrigin, inwardOffset)
+}
+
+export const SCENE_POSITIONS: Record<number, THREE.Vector3> = {
+  1: computeScenePosition(0.20, 5), // S-1 GoPro — dwell midpoint t=0.20, 5 units inward
+}
+
 // ─── Scene focal points ───────────────────────────────────────────────────────
 // The world-space position the camera looks toward when each scene is active.
-// S-0 is the head at world origin. Remaining scenes are placeholders until
-// Phase 2 places scene objects at their spiral positions.
 export const SCENE_FOCAL_POINTS: THREE.Vector3[] = [
   new THREE.Vector3(0, 0, 0),   // S-0 — head (permanent)
-  new THREE.Vector3(0, 0, 0),   // S-1 — GoPro       (Phase 2)
+  SCENE_POSITIONS[1],            // S-1 — GoPro
   new THREE.Vector3(0, 0, 0),   // S-2 — Sorbonne     (Phase 2)
   new THREE.Vector3(0, 0, 0),   // S-3 — BargMe       (Phase 2)
   new THREE.Vector3(0, 0, 0),   // S-4 — Hackathon    (Phase 2)
