@@ -3,6 +3,7 @@
 import { useThree } from '@react-three/fiber'
 import { useEffect } from 'react'
 import * as THREE from 'three'
+import { useStore } from '@/store/useStore'
 
 /**
  * Eagerly uploads all pending textures and geometries to the GPU
@@ -12,6 +13,7 @@ import * as THREE from 'three'
 export function GPUWarmup() {
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
+  const setGpuReady = useStore((s) => s.setGpuReady)
 
   useEffect(() => {
     // Traverse the full scene graph and push textures to the GPU
@@ -36,7 +38,13 @@ export function GPUWarmup() {
     gl.compile(scene, scene.children.find(
       (c) => (c as THREE.Camera).isCamera
     ) as THREE.Camera || new THREE.PerspectiveCamera())
-  }, [gl, scene])
+
+    // Signal that GPU is warm — Loader waits for this before fading out
+    // Use rAF to ensure the compiled frame has actually been flushed
+    requestAnimationFrame(() => {
+      setGpuReady(true)
+    })
+  }, [gl, scene, setGpuReady])
 
   return null
 }

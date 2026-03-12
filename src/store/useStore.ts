@@ -25,10 +25,13 @@ interface StoreState {
   userHasInteracted: boolean
   // > 0 when any UI element is hovered (ref-counted for overlapping hovers)
   pupilDilateCount: number
+  // true once GPUWarmup has uploaded textures and compiled shaders
+  gpuReady: boolean
 
   setScrollT: (t: number) => void
   setChatMode: (mode: boolean) => void
   setUserHasInteracted: (interacted: boolean) => void
+  setGpuReady: (ready: boolean) => void
   pupilDilate: () => void
   pupilContract: () => void
 }
@@ -38,6 +41,7 @@ export const useStore = create<StoreState>()((set) => ({
   activeScene: 0,
   chatMode: false,
   userHasInteracted: false,
+  gpuReady: false,
 
   setScrollT: (t: number) =>
     set({
@@ -48,6 +52,8 @@ export const useStore = create<StoreState>()((set) => ({
   setChatMode: (mode: boolean) => set({ chatMode: mode }),
 
   setUserHasInteracted: (interacted: boolean) => set({ userHasInteracted: interacted }),
+
+  setGpuReady: (ready: boolean) => set({ gpuReady: ready }),
 
   pupilDilateCount: 0,
   pupilDilate: () => set((s) => ({ pupilDilateCount: s.pupilDilateCount + 1 })),

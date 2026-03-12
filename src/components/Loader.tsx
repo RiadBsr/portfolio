@@ -2,22 +2,24 @@
 
 import { useProgress } from '@react-three/drei'
 import { useEffect, useState } from 'react'
+import { useStore } from '@/store/useStore'
 
 export function Loader() {
   const { progress, active } = useProgress()
+  const gpuReady = useStore((s) => s.gpuReady)
   const [visible, setVisible] = useState(true)
 
+  // Assets downloaded AND GPU warmup complete
+  const fullyReady = !active && progress === 100 && gpuReady
+
   useEffect(() => {
-    // Once loading completes, fade out then unmount
-    if (!active && progress === 100) {
+    if (fullyReady) {
       const id = setTimeout(() => setVisible(false), 600)
       return () => clearTimeout(id)
     }
-  }, [active, progress])
+  }, [fullyReady])
 
   if (!visible) return null
-
-  const done = !active && progress === 100
 
   return (
     <div
@@ -31,8 +33,8 @@ export function Loader() {
         justifyContent: 'center',
         background: '#050505',
         transition: 'opacity 0.5s ease-out',
-        opacity: done ? 0 : 1,
-        pointerEvents: done ? 'none' : 'all',
+        opacity: fullyReady ? 0 : 1,
+        pointerEvents: fullyReady ? 'none' : 'all',
       }}
     >
       {/* Progress bar */}
