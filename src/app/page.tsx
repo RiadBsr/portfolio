@@ -4,7 +4,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import * as THREE from "three";
 import { Model as HeadModel } from "@/components/Head";
-import { SpiralCamera } from "@/components/SpiralCamera";
+import { CameraPath } from "@/components/CameraPath";
 import { Particles } from "@/components/Particles";
 import { Annotations } from "@/components/Annotations";
 import { HUD } from "@/components/HUD";
@@ -34,8 +34,8 @@ export default function Home() {
   return (
     <main style={{ width: "100vw", height: "100vh" }}>
       <Canvas
-        // Perspective camera — fov 14 (telephoto), starts directly in front of the head.
-        // SpiralCamera takes over positioning on the first frame.
+        // Perspective camera — initial position matches path start.
+        // CameraPath takes over on the first frame (after GLB loads inside Suspense).
         camera={{ fov: 14, near: 0.1, far: 200, position: [0, 0, 1.3] }}
         shadows={{ type: THREE.PCFShadowMap }}
       >
@@ -61,9 +61,6 @@ export default function Home() {
         {/* Rim light from behind — adds depth/edge separation */}
         <pointLight position={[-1, 2, -2]} intensity={10} color="#ffffff" />
 
-        {/* Camera controller — drives position along Archimedean spiral */}
-        <SpiralCamera />
-
         {/* Ambient particle cloud centered on head */}
         <Particles />
 
@@ -72,6 +69,8 @@ export default function Home() {
 
         {/* All async assets (GLTFs, textures) under one Suspense — Loader shows progress */}
         <Suspense fallback={null}>
+          {/* Camera controller — follows the Blender-authored path from CameraPath.glb */}
+          <CameraPath />
           <HeadModel scale={1} />
           <GoPro />
           <GPUWarmup />
@@ -82,7 +81,7 @@ export default function Home() {
       <Loader />
 
       {/* WIP overlay — blurs canvas after last finished scene (update fromScrollT as scenes ship) */}
-      <DevOverlay fromScrollT={0.14} />
+      {/* <DevOverlay fromScrollT={0.14} /> */}
 
       {/* Persistent HTML overlay — outside Canvas, always on top */}
       <HUD />
