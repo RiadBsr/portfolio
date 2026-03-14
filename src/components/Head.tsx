@@ -184,7 +184,7 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     // Set up morph targets for pupil dilation — desktop only (no hover on mobile).
     // Scale around the geometry centroid (not origin) since bind-pose positions
     // are relative to the armature root, not the pupil center.
-    const PUPIL_DILATE_SCALE = 1.6
+    const PUPIL_DILATE_SCALE = 1.5
     const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 768
     for (const name of (isDesktop ? ['pupil_left', 'pupil_right'] : [])) {
       const obj = cloned.getObjectByName(name)

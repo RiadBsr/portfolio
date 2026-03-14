@@ -13,8 +13,10 @@ const SMOOTH_SPEED = 6
 // Scene-aware scroll speed — dramatically slow down in dwell ranges
 // so the user's scroll input primarily drives scene animations
 function getScrollSpeedMultiplier(t: number): number {
-  // S-1 GoPro: heavy slowdown from enter through exit transition
-  if (t >= 0.14 && t <= 0.46) return 0.2
+  // Intro phase: gentle slowdown so the pullback feels deliberate
+  if (t < 0.10) return 0.5
+  // S-1 GoPro: heavy slowdown (shifted for INTRO_T=0.10, old 0.14–0.26 → new 0.226–0.334)
+  if (t >= 0.226 && t <= 0.334) return 0.1
   return 1.0
 }
 

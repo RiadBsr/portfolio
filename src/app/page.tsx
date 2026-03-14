@@ -10,6 +10,7 @@ import { Annotations } from "@/components/Annotations";
 import { HUD } from "@/components/HUD";
 import { GoPro } from "@/components/scenes/GoPro";
 import { DevOverlay } from "@/components/DevOverlay";
+import { IntroOverlay } from "@/components/IntroOverlay";
 import { ChatPanel } from "@/components/ChatPanel";
 import { Loader } from "@/components/Loader";
 import { GPUWarmup } from "@/components/GPUWarmup";
@@ -82,7 +83,10 @@ export default function Home() {
       <Loader />
 
       {/* WIP overlay — blurs canvas after last finished scene (update fromScrollT as scenes ship) */}
-      <DevOverlay fromScrollT={0.14} />
+      <DevOverlay fromScrollT={0.2} />
+
+      {/* Intro overlay — name + scroll cue, fades out as straight pullback ends */}
+      <IntroOverlay />
 
       {/* Persistent HTML overlay — outside Canvas, always on top */}
       <HUD />

@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react'
 
-const COUNT = 200
+const COUNT = 300
 const SIGMA = 3 // Gaussian spread — tight cluster near head, thinning outward
 
 // Box-Muller transform for standard normal random variable
@@ -35,7 +35,7 @@ export function Particles() {
         color="#ffffff"
         size={0.06}
         transparent
-        opacity={0.15}
+        opacity={0.3}
         sizeAttenuation
         depthWrite={false}
       />

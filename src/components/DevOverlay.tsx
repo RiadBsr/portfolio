@@ -33,8 +33,9 @@ const mono: CSSProperties = {
 
 export function DevOverlay({ fromScrollT, fadeRange = 0.04 }: DevOverlayProps) {
   const scrollT = useStore((s) => s.scrollT)
+  const chatMode = useStore((s) => s.chatMode)
 
-  if (scrollT < fromScrollT) return null
+  if (scrollT < fromScrollT || chatMode) return null
 
   // 0 → 1 over the fadeRange
   const progress = Math.min(1, (scrollT - fromScrollT) / fadeRange)

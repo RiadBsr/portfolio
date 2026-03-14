@@ -112,19 +112,22 @@ export function ChatPanel() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: '16px',
           padding: '14px 16px',
           borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
           flexShrink: 0,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', minWidth: 0 }}>
           <div
             style={{
               width: 6,
               height: 6,
               borderRadius: '50%',
+              flexShrink: 0,
               background: '#4ade80',
-              boxShadow: '0 0 8px rgba(74, 222, 128, 0.4)',
+              boxShadow: '0 0 8px rgba(74, 222, 128, 0.6), 0 0 16px rgba(74, 222, 128, 0.2)',
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }}
           />
           <span
@@ -134,12 +137,13 @@ export function ChatPanel() {
               letterSpacing: '0.22em',
               color: 'rgba(255, 255, 255, 0.84)',
               textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
             }}
           >
             ASK RIAD — AI CLONE
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
           {messages.length > 0 && (
             <button
               onClick={() => clearChat()}

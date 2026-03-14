@@ -15,7 +15,7 @@ import { useStore } from '@/store/useStore'
 // Gentle Y undulation (±2 units) gives a helix feel — like unwinding a DNA strand.
 const SPIRAL_POINTS = 80
 const SPIRAL_REVOLUTIONS = 2.5
-const SPIRAL_RADIUS_START = 1.3
+const SPIRAL_RADIUS_START = 3.0  // matches INTRO_Z_END — seamless spiral handoff
 const SPIRAL_RADIUS_END = 45
 const SPIRAL_ANGLE_OFFSET = Math.PI / 2 // start in front of head (+Z direction)
 
@@ -34,15 +34,6 @@ export const SCENE_POSITIONS: Record<number, THREE.Vector3> = {
   1: computeScenePosition(0.30, 5), // S-1 GoPro — dwell midpoint t=0.30, 5 units inward
 }
 
-// Computes a Y-rotation that makes the scene face the camera at its dwell midpoint
-export function computeSceneFacingAngle(spiralT: number): number {
-  const camPos = _spiralCurve.getPoint(spiralT)
-  const scenePos = SCENE_POSITIONS[1] // generalize later
-  const dx = camPos.x - scenePos.x
-  const dz = camPos.z - scenePos.z
-  return Math.atan2(dx, dz)
-}
-
 // ─── Scene focal points ───────────────────────────────────────────────────────
 // The world-space position the camera looks toward when each scene is active.
 export const SCENE_FOCAL_POINTS: THREE.Vector3[] = [
@@ -58,10 +49,16 @@ export const SCENE_FOCAL_POINTS: THREE.Vector3[] = [
 ]
 
 // ─── Chat mode positions ─────────────────────────────────────────────────────
-// Camera placed close and slightly right so the head sits at ~1/3 from the
-// left edge of the viewport, leaving room for the chat panel on the right.
-export const CHAT_CAMERA_POSITION = new THREE.Vector3(0.6, 0.15, 2.2)
-export const CHAT_LOOK_AT = new THREE.Vector3(0.25, 0, 0)
+// Landscape: camera slightly right so the head sits in the left ~70% of the
+// viewport, leaving room for the chat panel on the right.
+export const CHAT_CAMERA_POSITION = new THREE.Vector3(0.4, 0.1, 2.2)
+export const CHAT_LOOK_AT = new THREE.Vector3(0.12, 0, 0)
+
+// Portrait (mobile): chat panel covers the bottom half of the screen, so the
+// camera goes below the head looking up — the crown/forehead peeks into the
+// top of the viewport above the panel ("sneak peek from the top" effect).
+export const CHAT_CAMERA_POSITION_MOBILE = new THREE.Vector3(0, 0.3, 2.0)
+export const CHAT_LOOK_AT_MOBILE = new THREE.Vector3(0, -0.25, 0)
 
 // ─── Spiral curve factory ─────────────────────────────────────────────────────
 // Exported so Phase 2 scene components can sample world-space positions along
@@ -79,6 +76,16 @@ export function buildSpiralCurve(): THREE.CatmullRomCurve3 {
   }
   return new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5)
 }
+
+// ─── Intro phase ──────────────────────────────────────────────────────────────
+// scrollT 0 → INTRO_T: camera pulls straight back along Z from close-up to the
+// spiral start. scrollT INTRO_T → 1 is remapped to spiralT 0 → 1.
+export const INTRO_T = 0.10
+const INTRO_Z_START = 1.3  // original spiral start — head fills the frame
+const INTRO_Z_END = 3.0    // matches new SPIRAL_RADIUS_START — seamless spiral handoff
+
+// Pre-allocated vector for intro target (never allocate inside useFrame)
+const _introTarget = new THREE.Vector3(0, 0, INTRO_Z_START)
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export function SpiralCamera() {
@@ -108,12 +115,24 @@ export function SpiralCamera() {
     }
 
     if (chatMode) {
-      // Chat mode: lerp camera to the fixed chat position (Phase 3 will animate this)
-      damp3(camera.position, CHAT_CAMERA_POSITION, 0.08, delta)
-      damp3(lookAt.current, CHAT_LOOK_AT, 0.08, delta)
+      // Chat mode: portrait screens get an upward-looking position so the head
+      // peeks in from the top above the bottom chat panel; landscape keeps the
+      // head in the left portion beside the panel.
+      const isPortrait = aspect < 1
+      const chatPos = isPortrait ? CHAT_CAMERA_POSITION_MOBILE : CHAT_CAMERA_POSITION
+      const chatLook = isPortrait ? CHAT_LOOK_AT_MOBILE : CHAT_LOOK_AT
+      damp3(camera.position, chatPos, 0.08, delta)
+      damp3(lookAt.current, chatLook, 0.08, delta)
+    } else if (t < INTRO_T) {
+      // Intro: straight Z pullback from tight close-up to spiral start
+      const prog = t / INTRO_T
+      _introTarget.set(0, 0, INTRO_Z_START + prog * (INTRO_Z_END - INTRO_Z_START))
+      damp3(camera.position, _introTarget, 0.1, delta)
+      damp3(lookAt.current, SCENE_FOCAL_POINTS[0], 0.08, delta)
     } else {
-      // Normal: follow the Catmull-Rom spiral
-      const spiralPos = curve.getPoint(t)
+      // Normal: remap scrollT → spiralT and follow the Catmull-Rom spiral
+      const spiralT = (t - INTRO_T) / (1 - INTRO_T)
+      const spiralPos = curve.getPoint(spiralT)
       damp3(camera.position, spiralPos, 0.1, delta)
 
       // Smoothly shift look-at toward the active scene's focal point

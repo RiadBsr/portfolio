@@ -30,7 +30,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Riad Boussoura — Portfolio",
+  title: "Riad Boussoura - Portfolio",
   description: "A showcase of my work and projects.",
 };
 

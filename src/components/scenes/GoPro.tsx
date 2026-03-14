@@ -1,17 +1,18 @@
 'use client'
 
 import * as THREE from 'three'
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF, useTexture } from '@react-three/drei'
 import { useSceneLifecycle, type SceneLifecycleState } from '@/hooks/useSceneLifecycle'
-import { SCENE_POSITIONS, computeSceneFacingAngle } from '@/components/SpiralCamera'
+import { SCENE_POSITIONS } from '@/components/SpiralCamera'
 
+// Shifted for INTRO_T=0.10: new = 0.10 + old * 0.90
 const LIFECYCLE = {
-  enterStart: 0.14,
-  enterEnd: 0.20,
-  exitStart: 0.40,
-  disposeAt: 0.55,
+  enterStart: 0.226,
+  enterEnd:   0.235,
+  exitStart:  0.307,
+  disposeAt:  0.334,
 }
 
 // Hemisphere separation along local X when fully open
@@ -21,10 +22,10 @@ const HEMI_OPEN_OFFSET = 0.6
 // 0.20–0.50 — hemispheres close together
 // 0.50–0.60 — brief pause (closed sphere)
 // 0.60–0.95 — stitch sweep
-const OPEN_END = 0.30
-const CLOSE_END = 0.50
-const STITCH_START = 0.60
-const STITCH_END = 0.95
+const OPEN_END = 0.10
+const CLOSE_END = 0.30
+const STITCH_START = 0.35
+const STITCH_END = 0.70
 
 export function GoPro() {
   const lifecycle = useSceneLifecycle(LIFECYCLE)
@@ -60,10 +61,7 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
   const groupRef = useRef<THREE.Group>(null!)
   const frntRef = useRef<THREE.Object3D | null>(null)
   const backRef = useRef<THREE.Object3D | null>(null)
-  const backMatRef = useRef<THREE.MeshBasicMaterial | null>(null)
-
-  // Pre-compute the Y rotation to face the camera
-  const facingAngle = useMemo(() => computeSceneFacingAngle(0.2), [])
+  const mixTUniform = useRef({ value: 0.0 })
 
   const clone = useMemo(() => {
     const cloned = gltf.scene.clone(true)
@@ -79,8 +77,6 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
     const frntNode = cloned.getObjectByName('FRNT')
     const backNode = cloned.getObjectByName('BACK')
     const goProNode = cloned.getObjectByName('GoPro')
-    frntRef.current = frntNode ?? null
-    backRef.current = backNode ?? null
 
     // ── FRNT hemisphere — aligned 360° photo ──
     if (frntNode && (frntNode as THREE.Mesh).isMesh) {
@@ -98,7 +94,7 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
       })))
     }
 
-    // ── BACK hemisphere — starts with unaligned texture, will transition to aligned ──
+    // ── BACK hemisphere — blends from unaligned to aligned during stitch ──
     if (backNode && (backNode as THREE.Mesh).isMesh) {
       const mesh = backNode as THREE.Mesh
       const mat = new THREE.MeshBasicMaterial({
@@ -108,8 +104,22 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
         polygonOffsetFactor: 1,
         polygonOffsetUnits: 1,
       })
+      mat.onBeforeCompile = (shader) => {
+        shader.uniforms.texB = { value: tex360 }
+        shader.uniforms.mixT = mixTUniform.current
+        shader.fragmentShader = 'uniform sampler2D texB;\nuniform float mixT;\n' + shader.fragmentShader
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          /* glsl */ `
+          #ifdef USE_MAP
+            vec4 sampledDiffuseColor = texture2D(map, vMapUv);
+            vec4 texBColor = texture2D(texB, vMapUv);
+            diffuseColor *= mix(sampledDiffuseColor, texBColor, mixT);
+          #endif
+          `,
+        )
+      }
       mesh.material = mat
-      backMatRef.current = mat
       const edges = new THREE.EdgesGeometry(mesh.geometry, 1)
       mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
         color: 0x000000, transparent: true, opacity: 0.5,
@@ -143,8 +153,16 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
     return cloned
   }, [gltf.scene, tex360, tex360Unaligned])
 
-  // Track whether texture swap has occurred to avoid doing it every frame
-  const textureSwapped = useRef(false)
+  // Set node refs from the rendered clone (not inside useMemo — React Strict Mode
+  // double-invokes useMemo in dev, which would leave refs pointing to an orphaned clone)
+  useEffect(() => {
+    frntRef.current = clone.getObjectByName('FRNT') ?? null
+    backRef.current = clone.getObjectByName('BACK') ?? null
+    return () => {
+      frntRef.current = null
+      backRef.current = null
+    }
+  }, [clone])
 
   useFrame(() => {
     if (!groupRef.current) return
@@ -178,13 +196,9 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
         if (backRef.current) backRef.current.position.x = 0
 
         if (dwellProgress >= STITCH_START && dwellProgress <= STITCH_END) {
-          // Phase B: stitch sweep — swap texture when complete
+          // Phase B: stitch sweep — gradually blend BACK texture from unaligned to aligned
           const stitchT = (dwellProgress - STITCH_START) / (STITCH_END - STITCH_START)
-          if (stitchT >= 1 && !textureSwapped.current && backMatRef.current) {
-            backMatRef.current.map = tex360
-            backMatRef.current.needsUpdate = true
-            textureSwapped.current = true
-          }
+          mixTUniform.current.value = stitchT
         }
       }
     }
@@ -199,7 +213,7 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
     : 0
 
   return (
-    <group position={[pos.x, pos.y, pos.z]} rotation-y={facingAngle}>
+    <group position={[pos.x, pos.y, pos.z]} rotation-y={0.3 * Math.PI}>
       <group ref={groupRef} visible={lifecycle.visible} scale={0.001}>
         <primitive object={clone} />
         {stitchActive && <StitchRing progress={stitchProgress} />}

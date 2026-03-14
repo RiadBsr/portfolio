@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback, useRef } from 'react'
+import { useMemo, useState, useCallback, useRef, useEffect } from 'react'
 import { Html } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useStore } from '@/store/useStore'
@@ -55,12 +55,29 @@ function AnnotationItem({
 }) {
   const [hovered, setHovered] = useState(false)
   const revealed = useRef(false)
+  // Track hover in a ref so the unmount cleanup can read the current value
+  const isHoveredRef = useRef(false)
 
   const pupilDilate = useStore((s) => s.pupilDilate)
   const pupilContract = useStore((s) => s.pupilContract)
 
-  const onOver = useCallback(() => { setHovered(true); pupilDilate() }, [pupilDilate])
-  const onOut = useCallback(() => { setHovered(false); pupilContract() }, [pupilContract])
+  const onOver = useCallback(() => {
+    isHoveredRef.current = true
+    setHovered(true)
+    pupilDilate()
+  }, [pupilDilate])
+
+  const onOut = useCallback(() => {
+    isHoveredRef.current = false
+    setHovered(false)
+    pupilContract()
+  }, [pupilContract])
+
+  // When the component unmounts mid-hover (scroll fades it out), release the pupil
+  useEffect(() => {
+    return () => { if (isHoveredRef.current) pupilContract() }
+  }, [pupilContract])
+
   const onAnimEnd = useCallback(() => { revealed.current = true }, [])
 
   const lineW = isMobile ? LINE_MOBILE : (hovered ? LINE_EXPANDED : LINE_COLLAPSED)
