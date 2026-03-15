@@ -1,7 +1,14 @@
 'use client'
 
-import type { CSSProperties } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { useStore } from '@/store/useStore'
+
+// ─── Personal links ──────────────────────────────────────────────────────────
+const LINKS = {
+  github: 'https://github.com/RiadBsr',
+  linkedin: 'https://linkedin.com/in/RiadBsr',
+  resume: '/resume.pdf',
+}
 
 // Scene labels and target scrollT values for the right-edge ticker.
 // Dwell midpoints shifted for INTRO_T=0.10: new = 0.10 + old * 0.90
@@ -21,6 +28,19 @@ const mono: CSSProperties = {
   fontFamily: 'var(--font-space-mono, monospace)',
 }
 
+const ctaLink: CSSProperties = {
+  ...mono,
+  fontSize: '12px',
+  letterSpacing: '0.18em',
+  color: 'rgba(255,255,255,0.78)',
+  textDecoration: 'none',
+  border: '1px solid rgba(255,255,255,0.22)',
+  padding: '5px 10px',
+  background: 'none',
+  cursor: 'pointer',
+  display: 'inline-block',
+}
+
 export function HUD() {
   const scrollT = useStore((s) => s.scrollT)
   const activeScene = useStore((s) => s.activeScene)
@@ -29,6 +49,20 @@ export function HUD() {
   const setChatMode = useStore((s) => s.setChatMode)
   const pupilDilate = useStore((s) => s.pupilDilate)
   const pupilContract = useStore((s) => s.pupilContract)
+
+  const [isMobile, setIsMobile] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    setIsMobile(mq.matches)
+    const handler = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches)
+      if (!e.matches) setMenuOpen(false)
+    }
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   const zLabel = chatMode ? 'CHAT_MODE' : scrollT.toFixed(3)
 
@@ -65,57 +99,130 @@ export function HUD() {
         RIAD BOUSSOURA
       </button>
 
-      {/* ── Top-right: CTAs ── */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 16,
-          right: 24,
-          display: 'flex',
-          gap: '10px',
-          alignItems: 'center',
-          pointerEvents: 'auto',
-        }}
-      >
-        <a
-          href="/resume.pdf"
-          target="_blank"
-          rel="noopener noreferrer"
-          onMouseEnter={pupilDilate}
-          onMouseLeave={pupilContract}
+      {/* ── Top-right: desktop CTAs ── */}
+      {!isMobile && (
+        <div
           style={{
-            ...mono,
-            fontSize: '12px',
-            letterSpacing: '0.18em',
-            color: 'rgba(255,255,255,0.78)',
-            textDecoration: 'none',
-            border: '1px solid rgba(255,255,255,0.22)',
-            padding: '5px 10px',
+            position: 'absolute',
+            top: 16,
+            right: 24,
+            display: 'flex',
+            gap: '10px',
+            alignItems: 'center',
+            pointerEvents: 'auto',
           }}
         >
-          RESUME
-        </a>
-        <button
-          onClick={() => setChatMode(!chatMode)}
-          onMouseEnter={pupilDilate}
-          onMouseLeave={pupilContract}
-          style={{
-            ...mono,
-            fontSize: '12px',
-            letterSpacing: '0.18em',
-            color: chatMode ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)',
-            border: chatMode
-              ? '1px solid rgba(255,255,255,0.35)'
-              : '1px solid rgba(255,255,255,0.22)',
-            padding: '5px 10px',
-            background: chatMode ? 'rgba(255,255,255,0.1)' : 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-        >
-          CHAT
-        </button>
-      </div>
+          <a
+            href={LINKS.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseEnter={pupilDilate}
+            onMouseLeave={pupilContract}
+            style={ctaLink}
+          >
+            GITHUB
+          </a>
+          <a
+            href={LINKS.linkedin}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseEnter={pupilDilate}
+            onMouseLeave={pupilContract}
+            style={ctaLink}
+          >
+            LINKEDIN
+          </a>
+          <a
+            href={LINKS.resume}
+            target="_blank"
+            rel="noopener noreferrer"
+            onMouseEnter={pupilDilate}
+            onMouseLeave={pupilContract}
+            style={ctaLink}
+          >
+            RESUME
+          </a>
+        </div>
+      )}
+
+      {/* ── Top-right: mobile hamburger + dropdown ── */}
+      {isMobile && (
+        <>
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            onMouseEnter={pupilDilate}
+            onMouseLeave={pupilContract}
+            style={{
+              position: 'absolute',
+              top: 16,
+              right: 24,
+              ...mono,
+              fontSize: '12px',
+              letterSpacing: '0.18em',
+              color: menuOpen ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.78)',
+              border: menuOpen
+                ? '1px solid rgba(255,255,255,0.35)'
+                : '1px solid rgba(255,255,255,0.22)',
+              padding: '5px 10px',
+              background: menuOpen ? 'rgba(255,255,255,0.08)' : 'none',
+              cursor: 'pointer',
+              pointerEvents: 'auto',
+              transition: 'all 0.2s',
+            }}
+          >
+            {menuOpen ? 'CLOSE' : 'MENU'}
+          </button>
+
+          {menuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 48,
+                right: 24,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                alignItems: 'stretch',
+                pointerEvents: 'auto',
+                background: 'rgba(5,5,5,0.88)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                padding: '8px',
+              }}
+            >
+              <a
+                href={LINKS.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                onMouseEnter={pupilDilate}
+                onMouseLeave={pupilContract}
+                style={{ ...ctaLink, textAlign: 'center' }}
+              >
+                GITHUB
+              </a>
+              <a
+                href={LINKS.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                onMouseEnter={pupilDilate}
+                onMouseLeave={pupilContract}
+                style={{ ...ctaLink, textAlign: 'center' }}
+              >
+                LINKEDIN
+              </a>
+              <a
+                href={LINKS.resume}
+                target="_blank"
+                rel="noopener noreferrer"
+                onMouseEnter={pupilDilate}
+                onMouseLeave={pupilContract}
+                style={{ ...ctaLink, textAlign: 'center' }}
+              >
+                RESUME
+              </a>
+            </div>
+          )}
+        </>
+      )}
 
       {/* ── Right edge: scene ticker ── */}
       <div
@@ -171,6 +278,32 @@ export function HUD() {
       >
         z = {zLabel}
       </div>
+
+      {/* ── Bottom-right: CHAT button — hidden when panel is open (panel has its own close) ── */}
+      {!chatMode && (
+        <button
+          onClick={() => { pupilContract(); setChatMode(true) }}
+          onMouseEnter={pupilDilate}
+          onMouseLeave={pupilContract}
+          style={{
+            position: 'absolute',
+            bottom: 16,
+            right: 24,
+            ...mono,
+            fontSize: '12px',
+            letterSpacing: '0.18em',
+            color: 'rgba(255,255,255,0.78)',
+            border: '1px solid rgba(255,255,255,0.22)',
+            padding: '5px 10px',
+            background: 'none',
+            cursor: 'pointer',
+            pointerEvents: 'auto',
+            transition: 'all 0.2s',
+          }}
+        >
+          CHAT
+        </button>
+      )}
     </div>
   )
 }

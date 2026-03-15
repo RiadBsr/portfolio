@@ -85,6 +85,7 @@ docs/
 - Allocate Three.js objects (Vector3, Quaternion, Object3D) outside components or in `useMemo` — never inside `useFrame`.
 - Font variables: `--font-space-mono` (HUD/labels), `--font-geist-sans` (body), `--font-bebas` (headings), `--font-dm-sans` (UI).
 - Design tokens in `globals.css` (`:root` block): `--black`, `--white`, `--wire`, `--accent`, etc.
+- **No emojis in the UI** — all visible text must use plain ASCII/Latin characters only. This applies to HUD labels, overlays, annotations, and any other rendered text.
 
 ## Deployment Rules
 

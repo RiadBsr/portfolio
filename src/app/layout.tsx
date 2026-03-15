@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Space_Mono, Bebas_Neue, DM_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -29,9 +29,21 @@ const dmSans = DM_Sans({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#050505',
+}
+
 export const metadata: Metadata = {
   title: "Riad Boussoura - Portfolio",
   description: "A showcase of my work and projects.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Riad B.",
+  },
 };
 
 export default function RootLayout({

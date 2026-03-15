@@ -33,7 +33,7 @@ export default function Home() {
   useAutoDrift()
 
   return (
-    <main style={{ width: "100vw", height: "100vh" }}>
+    <main style={{ width: "100vw", height: "100dvh" }}>
       <Canvas
         // Perspective camera — fov 14 (telephoto), starts directly in front of the head.
         // SpiralCamera takes over positioning on the first frame.

@@ -46,8 +46,8 @@ export function IntroOverlay() {
           gap: 14px;
         }
         .intro-heading {
-          font-family: var(--font-bebas);
-          font-size: clamp(52px, 10vw, 200px);
+          font-family: var(--font-space-mono, monospace);
+          font-size: clamp(52px, 10vw, 150px);
           letter-spacing: 0.05em;
           color: rgba(255,255,255,0.92);
           margin: 0;
@@ -58,7 +58,7 @@ export function IntroOverlay() {
           display: block;
         }
         .intro-sub {
-          font-family: var(--font-dm-sans);
+          font-family: var(--font-space-mono, monospace);
           font-size: clamp(11px, 1.1vw, 14px);
           letter-spacing: 0.3em;
           color: rgba(255,255,255,0.42);
