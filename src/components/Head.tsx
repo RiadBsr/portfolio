@@ -17,6 +17,19 @@ const dummyEyeR = new THREE.Object3D()
 // Pre-allocated quaternions for eye tracking — avoids .clone() allocation every frame
 const _eyeLTargetQ = new THREE.Quaternion()
 const _eyeRTargetQ = new THREE.Quaternion()
+// Pre-allocated helpers for rock float animation
+const _tmpQ = new THREE.Quaternion()
+const _zAxis = new THREE.Vector3(0, 0, 1)
+
+// Each rock gets unique frequencies + phases so they never sync up
+// sx: X-axis outward sign — left-side rocks use -1 so (sin+1)/2 pushes them away from head center
+const ROCK_NAMES = ['rock_1', 'rock_2', 'rock_3', 'rock_4'] as const
+const ROCK_FLOAT = [
+  { sx: -1, fx: 0.37, fy: 0.53, fz: 0.29, ax: 0.018, ay: 0.025, az: 0.014, px: 0.00, py: 1.20, pz: 2.40, ra: 0.018 }, // left
+  { sx:  1, fx: 0.29, fy: 0.41, fz: 0.47, ax: 0.022, ay: 0.018, az: 0.020, px: 1.10, py: 2.30, pz: 0.70, ra: 0.022 }, // right
+  { sx:  1, fx: 0.43, fy: 0.31, fz: 0.53, ax: 0.014, ay: 0.028, az: 0.016, px: 2.20, py: 0.40, pz: 1.60, ra: 0.015 }, // right
+  { sx: -1, fx: 0.51, fy: 0.47, fz: 0.37, ax: 0.020, ay: 0.022, az: 0.018, px: 0.80, py: 1.90, pz: 3.10, ra: 0.020 }, // left
+]
 
 // Helpers to extract sharp edges exclusively (relies on split vertices from Blender's Edge Split output)
 function createSharpEdgeGeometry(geometry: THREE.BufferGeometry) {
@@ -256,6 +269,17 @@ export function Model(props: JSX.IntrinsicElements['group']) {
   // Current animated pupil morph influence (0 = normal, 1 = dilated)
   const pupilScaleVal = React.useRef(0)
 
+  // Rock bone refs + rest positions (resolved once after clone)
+  const rockBonesRef = React.useRef<(THREE.Object3D | null)[]>([null, null, null, null])
+  const rockRestPos = React.useRef([
+    new THREE.Vector3(), new THREE.Vector3(),
+    new THREE.Vector3(), new THREE.Vector3(),
+  ])
+  const rockRestQuat = React.useRef([
+    new THREE.Quaternion(), new THREE.Quaternion(),
+    new THREE.Quaternion(), new THREE.Quaternion(),
+  ])
+
   React.useEffect(() => {
     headBoneRef.current = clone.getObjectByName('Head') ?? null
     eyeLBoneRef.current = clone.getObjectByName('eyeL001') ?? null
@@ -265,6 +289,16 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     // Save rest quaternions before we start modifying them
     if (eyeLBoneRef.current) eyeLRestQuat.current.copy(eyeLBoneRef.current.quaternion)
     if (eyeRBoneRef.current) eyeRRestQuat.current.copy(eyeRBoneRef.current.quaternion)
+
+    // Resolve rock bones + snapshot rest pose
+    ROCK_NAMES.forEach((name, i) => {
+      const bone = clone.getObjectByName(name) ?? null
+      rockBonesRef.current[i] = bone
+      if (bone) {
+        rockRestPos.current[i].copy(bone.position)
+        rockRestQuat.current[i].copy(bone.quaternion)
+      }
+    })
   }, [clone])
 
   // Hardware Gyroscope tracking for Mobile
@@ -395,6 +429,25 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     }
     if (pupilRRef.current && (pupilRRef.current as THREE.Mesh).morphTargetInfluences) {
       (pupilRRef.current as THREE.Mesh).morphTargetInfluences![0] = inf
+    }
+
+    // Rock floating — sinusoidal drift on each bone's local position + a gentle tilt
+    const t = state.clock.elapsedTime
+    const rocks = rockBonesRef.current
+    for (let i = 0; i < 4; i++) {
+      const bone = rocks[i]
+      if (!bone) continue
+      const p = ROCK_FLOAT[i]
+      const rest = rockRestPos.current[i]
+      bone.position.set(
+        rest.x + ((Math.sin(t * p.fx + p.px) + 1) * 0.5) * p.ax * p.sx,
+        rest.y + ((Math.sin(t * p.fy + p.py) + 1) * 0.5) * p.ay,
+        rest.z + ((Math.sin(t * p.fz + p.pz) + 1) * 0.5) * p.az,
+      )
+      // Subtle tumble around Z for a slightly drunk-floating feel
+      const tilt = Math.sin(t * p.fx * 0.7 + p.px + 0.5) * p.ra
+      bone.quaternion.copy(rockRestQuat.current[i])
+      bone.quaternion.multiply(_tmpQ.setFromAxisAngle(_zAxis, tilt))
     }
   })
 
