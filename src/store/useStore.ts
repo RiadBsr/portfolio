@@ -29,11 +29,14 @@ interface StoreState {
   pupilDilateCount: number
   // true once GPUWarmup has uploaded textures and compiled shaders
   gpuReady: boolean
+  // true while the head should play the talk animation
+  isTalking: boolean
 
   setScrollT: (t: number) => void
   setChatMode: (mode: boolean) => void
   setUserHasInteracted: (interacted: boolean) => void
   setGpuReady: (ready: boolean) => void
+  setTalking: (talking: boolean) => void
   pupilDilate: () => void
   pupilContract: () => void
 }
@@ -44,6 +47,7 @@ export const useStore = create<StoreState>()((set) => ({
   chatMode: false,
   userHasInteracted: false,
   gpuReady: false,
+  isTalking: false,
 
   setScrollT: (t: number) =>
     set({
@@ -56,6 +60,8 @@ export const useStore = create<StoreState>()((set) => ({
   setUserHasInteracted: (interacted: boolean) => set({ userHasInteracted: interacted }),
 
   setGpuReady: (ready: boolean) => set({ gpuReady: ready }),
+
+  setTalking: (talking: boolean) => set({ isTalking: talking }),
 
   pupilDilateCount: 0,
   pupilDilate: () => set((s) => ({ pupilDilateCount: s.pupilDilateCount + 1 })),

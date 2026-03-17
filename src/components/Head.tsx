@@ -301,38 +301,47 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     })
   }, [clone])
 
+  // Global pointer tracking — works even when cursor is over the chat panel
+  const globalPointer = React.useRef({ x: 0, y: 0 })
+
   // Hardware Gyroscope tracking for Mobile
-  const simulatedPointer = React.useRef({ x: 0, y: 0 })
   const hasGyro = React.useRef(false)
 
   React.useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      // Normalize to [-1, 1] matching R3F state.pointer convention
+      globalPointer.current.x = (e.clientX / window.innerWidth) * 2 - 1
+      globalPointer.current.y = (e.clientY / window.innerHeight) * 2 - 1
+    }
+
     const handleOrientation = (e: DeviceOrientationEvent) => {
       if (e.beta !== null && e.gamma !== null) {
         hasGyro.current = true
-        // e.beta (front-to-back tilt): typical holding range is ~20 (flat) to ~90 (upright)
-        // Normalize 45deg as "center" (0), mapped roughly from -30 to 30 deg deflection
-        let normalizedBeta = (e.beta - 45) / 30
-
-        // e.gamma (left-to-right tilt): range is -90 to 90. We care about -30 to 30 mostly.
-        let normalizedGamma = e.gamma / 30
-
-        // Clamp to [-1, 1] range to match R3F state.pointer behavior
-        simulatedPointer.current.y = Math.max(-1, Math.min(1, normalizedBeta)) // pitch
-        simulatedPointer.current.x = Math.max(-1, Math.min(1, normalizedGamma)) // yaw
+        const normalizedBeta = (e.beta - 45) / 30
+        const normalizedGamma = e.gamma / 30
+        globalPointer.current.y = Math.max(-1, Math.min(1, normalizedBeta))
+        globalPointer.current.x = Math.max(-1, Math.min(1, normalizedGamma))
       }
     }
 
-    // Only add listener if we're in a secure context (HTTPS/localhost) which is required for gyroscope
+    window.addEventListener('pointermove', handlePointerMove)
     if (window.DeviceOrientationEvent) {
       window.addEventListener('deviceorientation', handleOrientation)
     }
 
-    return () => window.removeEventListener('deviceorientation', handleOrientation)
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('deviceorientation', handleOrientation)
+    }
   }, [])
+
+  // Bones whose rotation is driven by cursor/gyro tracking — exclude from animations
+  const TRACKING_BONES = ['head', 'eyel001', 'eyer001']
 
   // Manual animation mixer
   const mixerRef = React.useRef<THREE.AnimationMixer | null>(null)
   const blinkActionRef = React.useRef<THREE.AnimationAction | null>(null)
+  const talkActionRef = React.useRef<THREE.AnimationAction | null>(null)
 
   React.useEffect(() => {
     const mixer = new THREE.AnimationMixer(clone)
@@ -352,6 +361,21 @@ export function Model(props: JSX.IntrinsicElements['group']) {
       action.setLoop(THREE.LoopOnce, 1)
       action.clampWhenFinished = false
       blinkActionRef.current = action
+    }
+
+    // Find TalkAction and strip tracking-bone tracks so jaw moves without overriding head/eye tracking
+    const talkClip = gltf.animations.find((clip) => clip.name === 'TalkAction')
+    if (talkClip) {
+      const filteredClip = talkClip.clone()
+      filteredClip.tracks = filteredClip.tracks.filter((track) => {
+        const boneName = track.name.split('.')[0].toLowerCase()
+        return !TRACKING_BONES.includes(boneName)
+      })
+
+      const action = mixer.clipAction(filteredClip)
+      action.setLoop(THREE.LoopRepeat, Infinity)
+      action.clampWhenFinished = false
+      talkActionRef.current = action
     }
 
     // Random blink timer
@@ -377,6 +401,22 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     }
   }, [clone, gltf.animations])
 
+  const isTalking = useStore((s) => s.isTalking)
+  const wasTalkingRef = React.useRef(false)
+
+  // Start/stop TalkAction reactively
+  React.useEffect(() => {
+    const action = talkActionRef.current
+    if (!action) return
+
+    if (isTalking && !wasTalkingRef.current) {
+      action.reset().fadeIn(0.15).play()
+    } else if (!isTalking && wasTalkingRef.current) {
+      action.fadeOut(0.3)
+    }
+    wasTalkingRef.current = isTalking
+  }, [isTalking])
+
   const pupilDilated = useStore((s) => s.pupilDilateCount > 0)
 
   useFrame((state, delta) => {
@@ -387,9 +427,9 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     const eyeR = eyeRBoneRef.current
     const isMobile = isMobileRef.current
 
-    // Use gyroscope input if available, otherwise fallback to mouse/cursor position
-    const pointerX = (isMobile && hasGyro.current) ? simulatedPointer.current.x : state.pointer.x
-    const pointerY = (isMobile && hasGyro.current) ? simulatedPointer.current.y : -state.pointer.y
+    // Global pointer — works over canvas AND chat panel (gyro writes to same ref on mobile)
+    const pointerX = globalPointer.current.x
+    const pointerY = globalPointer.current.y
 
     // Head: subtle, slow movement
     const maxHeadRotY = isMobile ? Math.PI / 15 : Math.PI / 6

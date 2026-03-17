@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef } from 'react'
+import { useStore } from '@/store/useStore'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -30,6 +31,9 @@ export function useChat(): UseChatReturn {
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const talkStartRef = useRef(0)
+  const talkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const setTalking = useStore((s) => s.setTalking)
 
   const sendMessage = useCallback(async (text: string) => {
     const trimmed = text.trim()
@@ -41,6 +45,11 @@ export function useChat(): UseChatReturn {
     const updatedMessages = [...messages, userMessage]
     setMessages(updatedMessages)
     setIsStreaming(true)
+
+    // Start talking animation
+    if (talkTimerRef.current) clearTimeout(talkTimerRef.current)
+    talkStartRef.current = Date.now()
+    setTalking(true)
 
     // Abort any previous in-flight request
     abortRef.current?.abort()
@@ -138,6 +147,16 @@ export function useChat(): UseChatReturn {
     } finally {
       setIsStreaming(false)
       abortRef.current = null
+
+      // Keep talking animation for at least 5s total
+      const elapsed = Date.now() - talkStartRef.current
+      const MIN_TALK_MS = 5000
+      const remaining = MIN_TALK_MS - elapsed
+      if (remaining > 0) {
+        talkTimerRef.current = setTimeout(() => setTalking(false), remaining)
+      } else {
+        setTalking(false)
+      }
     }
   }, [messages, isStreaming])
 
