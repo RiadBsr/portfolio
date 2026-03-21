@@ -309,6 +309,9 @@ export function Model(props: JSX.IntrinsicElements['group']) {
 
   React.useEffect(() => {
     const handlePointerMove = (e: PointerEvent) => {
+      // On mobile with gyro, ignore touch/pen pointer events —
+      // gyro owns head tracking, finger position should not override it.
+      if (hasGyro.current && e.pointerType !== 'mouse') return
       // Normalize to [-1, 1] matching R3F state.pointer convention
       globalPointer.current.x = (e.clientX / window.innerWidth) * 2 - 1
       globalPointer.current.y = (e.clientY / window.innerHeight) * 2 - 1
