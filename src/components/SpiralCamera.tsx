@@ -5,6 +5,7 @@ import { useRef, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { damp3 } from 'maath/easing'
 import { useStore } from '@/store/useStore'
+import { smootherstep } from '@/utils/easing'
 
 // ─── Spiral parameters ────────────────────────────────────────────────────────
 // Archimedean spiral: 2.5 full revolutions, radius 0.5 → 45 Three.js units.
@@ -115,29 +116,26 @@ export function SpiralCamera() {
     }
 
     if (chatMode) {
-      // Chat mode: portrait screens get an upward-looking position so the head
-      // peeks in from the top above the bottom chat panel; landscape keeps the
-      // head in the left portion beside the panel.
       const isPortrait = aspect < 1
       const chatPos = isPortrait ? CHAT_CAMERA_POSITION_MOBILE : CHAT_CAMERA_POSITION
       const chatLook = isPortrait ? CHAT_LOOK_AT_MOBILE : CHAT_LOOK_AT
-      damp3(camera.position, chatPos, 0.08, delta)
-      damp3(lookAt.current, chatLook, 0.08, delta)
+      damp3(camera.position, chatPos, 0.12, delta)
+      damp3(lookAt.current, chatLook, 0.12, delta)
     } else if (t < INTRO_T) {
-      // Intro: straight Z pullback from tight close-up to spiral start
-      const prog = t / INTRO_T
+      // Intro: eased Z pullback — fast start, gentle settle
+      const prog = smootherstep(t / INTRO_T)
       _introTarget.set(0, 0, INTRO_Z_START + prog * (INTRO_Z_END - INTRO_Z_START))
-      damp3(camera.position, _introTarget, 0.1, delta)
-      damp3(lookAt.current, SCENE_FOCAL_POINTS[0], 0.08, delta)
+      damp3(camera.position, _introTarget, 0.18, delta)
+      damp3(lookAt.current, SCENE_FOCAL_POINTS[0], 0.14, delta)
     } else {
       // Normal: remap scrollT → spiralT and follow the Catmull-Rom spiral
       const spiralT = (t - INTRO_T) / (1 - INTRO_T)
       const spiralPos = curve.getPoint(spiralT)
-      damp3(camera.position, spiralPos, 0.1, delta)
+      damp3(camera.position, spiralPos, 0.18, delta)
 
       // Smoothly shift look-at toward the active scene's focal point
       const focalPoint = SCENE_FOCAL_POINTS[activeScene] ?? SCENE_FOCAL_POINTS[0]
-      damp3(lookAt.current, focalPoint, 0.08, delta)
+      damp3(lookAt.current, focalPoint, 0.14, delta)
     }
 
     camera.lookAt(lookAt.current)

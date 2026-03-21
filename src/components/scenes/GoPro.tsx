@@ -6,6 +6,7 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF, useTexture } from '@react-three/drei'
 import { useSceneLifecycle, type SceneLifecycleState } from '@/hooks/useSceneLifecycle'
 import { SCENE_POSITIONS } from '@/components/SpiralCamera'
+import { easeInOut, easeOut } from '@/utils/easing'
 
 // Shifted for INTRO_T=0.10: new = 0.10 + old * 0.90
 const LIFECYCLE = {
@@ -170,8 +171,8 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
     const { phase, enterProgress, dwellProgress } = lifecycle
 
     if (phase === 'entering') {
-      // Scale in with ease-out cubic
-      const t = 1 - Math.pow(1 - enterProgress, 3)
+      // Scale in with snappy ease-out (enterProgress already has easeInOut from lifecycle)
+      const t = easeOut(enterProgress, 2)
       groupRef.current.scale.setScalar(Math.max(0.001, t))
       // Hemispheres fully open during enter
       if (frntRef.current) frntRef.current.position.x = HEMI_OPEN_OFFSET
@@ -184,9 +185,9 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
         if (frntRef.current) frntRef.current.position.x = HEMI_OPEN_OFFSET
         if (backRef.current) backRef.current.position.x = -HEMI_OPEN_OFFSET
       } else if (dwellProgress < CLOSE_END) {
-        // Phase A: hemispheres close together
+        // Phase A: hemispheres close together with snappy ease-in-out
         const closeT = (dwellProgress - OPEN_END) / (CLOSE_END - OPEN_END)
-        const eased = 1 - Math.pow(1 - closeT, 2) // ease out quad
+        const eased = easeInOut(closeT)
         const offset = HEMI_OPEN_OFFSET * (1 - eased)
         if (frntRef.current) frntRef.current.position.x = offset
         if (backRef.current) backRef.current.position.x = -offset
@@ -196,9 +197,9 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
         if (backRef.current) backRef.current.position.x = 0
 
         if (dwellProgress >= STITCH_START && dwellProgress <= STITCH_END) {
-          // Phase B: stitch sweep — gradually blend BACK texture from unaligned to aligned
+          // Phase B: stitch sweep — eased blend for satisfying texture transition
           const stitchT = (dwellProgress - STITCH_START) / (STITCH_END - STITCH_START)
-          mixTUniform.current.value = stitchT
+          mixTUniform.current.value = easeInOut(stitchT)
         }
       }
     }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useStore } from '@/store/useStore'
+import { easeInOut } from '@/utils/easing'
 
 export interface SceneLifecycleConfig {
   enterStart: number
@@ -29,13 +30,13 @@ export function useSceneLifecycle(config: SceneLifecycleConfig): SceneLifecycleS
     return { phase: 'disposed', enterProgress: 1, dwellProgress: 1, exitProgress: 1, visible: false, shouldMount: false }
   }
   if (scrollT < enterEnd) {
-    const p = (scrollT - enterStart) / (enterEnd - enterStart)
+    const p = easeInOut((scrollT - enterStart) / (enterEnd - enterStart))
     return { phase: 'entering', enterProgress: p, dwellProgress: 0, exitProgress: 0, visible: true, shouldMount: true }
   }
   if (scrollT < exitStart) {
-    const p = (scrollT - enterEnd) / (exitStart - enterEnd)
+    const p = easeInOut((scrollT - enterEnd) / (exitStart - enterEnd))
     return { phase: 'dwelling', enterProgress: 1, dwellProgress: p, exitProgress: 0, visible: true, shouldMount: true }
   }
-  const p = (scrollT - exitStart) / (disposeAt - exitStart)
+  const p = easeInOut((scrollT - exitStart) / (disposeAt - exitStart))
   return { phase: 'exiting', enterProgress: 1, dwellProgress: 1, exitProgress: p, visible: true, shouldMount: true }
 }
