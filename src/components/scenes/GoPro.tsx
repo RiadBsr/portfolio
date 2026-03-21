@@ -19,14 +19,14 @@ const LIFECYCLE = {
 // Hemisphere separation along local X when fully open
 const HEMI_OPEN_OFFSET = 0.6
 // Dwell progress thresholds for animation phases:
-// 0.0–0.25  — hemispheres stay fully open (intro text visible, appreciate the setup)
-// 0.25–0.45 — hemispheres close together
-// 0.45–0.50 — brief pause (closed sphere)
-// 0.50–0.85 — stitch sweep
-const OPEN_END = 0.25
-const CLOSE_END = 0.45
-const STITCH_START = 0.50
-const STITCH_END = 0.85
+// 0.0–0.20  — hemispheres stay fully open (intro text visible, appreciate the setup)
+// 0.20–0.40 — hemispheres close together
+// 0.40–0.50 — brief pause (closed sphere)
+// 0.50–0.80 — stitch sweep
+const OPEN_END = 0.2
+const CLOSE_END = 0.4
+const STITCH_START = 0.45
+const STITCH_END = 0.80
 
 export function GoPro() {
   const lifecycle = useSceneLifecycle(LIFECYCLE)
