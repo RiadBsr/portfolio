@@ -8,7 +8,8 @@ import { useStore } from '@/store/useStore'
 const VIRTUAL_HEIGHT = 6000
 
 // Exponential smoothing speed (higher = snappier camera feel).
-const SMOOTH_SPEED = 6
+// 10 gives a TikTok-like fast attack with smooth settling.
+const SMOOTH_SPEED = 10
 
 // Scene-aware scroll speed — dramatically slow down in dwell ranges
 // so the user's scroll input primarily drives scene animations
