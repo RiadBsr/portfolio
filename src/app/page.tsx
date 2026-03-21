@@ -9,6 +9,7 @@ import { Particles } from "@/components/Particles";
 import { Annotations } from "@/components/Annotations";
 import { HUD } from "@/components/HUD";
 import { GoPro } from "@/components/scenes/GoPro";
+import { GoProIntro } from "@/components/scenes/GoProIntro";
 import { DevOverlay } from "@/components/DevOverlay";
 import { IntroOverlay } from "@/components/IntroOverlay";
 import { ChatPanel } from "@/components/ChatPanel";
@@ -83,10 +84,13 @@ export default function Home() {
       <Loader />
 
       {/* WIP overlay — blurs canvas after last finished scene (update fromScrollT as scenes ship) */}
-      <DevOverlay fromScrollT={0.2} />
+      <DevOverlay fromScrollT={0.3} />
 
       {/* Intro overlay — name + scroll cue, fades out as straight pullback ends */}
       <IntroOverlay />
+
+      {/* GoPro scene intro — title + description, builds narrative before stitching animation */}
+      <GoProIntro />
 
       {/* Persistent HTML overlay — outside Canvas, always on top */}
       <HUD />
