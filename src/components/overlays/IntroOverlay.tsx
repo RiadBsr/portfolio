@@ -18,12 +18,14 @@ export function IntroOverlay() {
       ? 1
       : 1 - (scrollT - FADE_OUT_START) / (FADE_OUT_END - FADE_OUT_START)
 
-  // Animate the BOUSSOURA mask as the camera pulls back (scrollT 0 → INTRO_T=0.10).
+  // Animate the BOUSSOURA mask as the camera pulls back (scrollT 0 → 0.12).
+  // Uses smootherstep to match CameraRig's S-0 pullback easing (PATH_SEGMENTS[0]).
   // At scrollT=0 (close-up): most letters hidden — gradient cuts in early.
-  // At scrollT=0.10 (full pullback): almost all letters revealed.
-  const maskProg = Math.min(scrollT / 0.10, 1)
-  const solidEnd = (40 + maskProg * 48).toFixed(1)  // 40% → 88%
-  const fadeEnd  = (65 + maskProg * 43).toFixed(1)  // 65% → 108%
+  // At scrollT=0.12 (full pullback): all letters revealed.
+  const rawProg = Math.min(scrollT / 0.12, 1)
+  const t = rawProg * rawProg * rawProg * (rawProg * (rawProg * 6 - 15) + 10) // smootherstep
+  const solidEnd = (55 + t * 48).toFixed(1)  // 55% → 103%
+  const fadeEnd  = (80 + t * 43).toFixed(1)  // 80% → 123%
   const boussouraMask = `linear-gradient(to right, black ${solidEnd}%, transparent ${fadeEnd}%)`
 
   return (
@@ -46,8 +48,8 @@ export function IntroOverlay() {
           gap: 14px;
         }
         .intro-heading {
-          font-family: var(--font-space-mono, monospace);
-          font-size: clamp(52px, 10vw, 150px);
+          font-family: var(--font-bebas);
+          font-size: clamp(52px, 10vw, 200px);
           letter-spacing: 0.05em;
           color: rgba(255,255,255,0.92);
           margin: 0;

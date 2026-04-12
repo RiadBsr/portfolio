@@ -3,18 +3,18 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense } from "react";
 import * as THREE from "three";
-import { Model as HeadModel } from "@/components/Head";
-import { SpiralCamera } from "@/components/SpiralCamera";
-import { Particles } from "@/components/Particles";
-import { Annotations } from "@/components/Annotations";
-import { HUD } from "@/components/HUD";
-import { GoPro } from "@/components/scenes/GoPro";
-import { GoProIntro } from "@/components/scenes/GoProIntro";
-import { DevOverlay } from "@/components/DevOverlay";
-import { IntroOverlay } from "@/components/IntroOverlay";
-import { ChatPanel } from "@/components/ChatPanel";
-import { Loader } from "@/components/Loader";
-import { GPUWarmup } from "@/components/GPUWarmup";
+import { Model as HeadModel } from "@/components/scenes/head/Head";
+import { HeadAnnotations } from "@/components/scenes/head/HeadAnnotations";
+import { GoPro } from "@/components/scenes/gopro/GoPro";
+import { GoProIntro } from "@/components/scenes/gopro/GoProIntro";
+import { CameraRig } from "@/components/camera/CameraRig";
+import { Particles } from "@/components/effects/Particles";
+import { GPUWarmup } from "@/components/effects/GPUWarmup";
+import { HUD } from "@/components/overlays/HUD";
+import { DevOverlay } from "@/components/overlays/DevOverlay";
+import { IntroOverlay } from "@/components/overlays/IntroOverlay";
+import { ChatPanel } from "@/components/overlays/ChatPanel";
+import { Loader } from "@/components/overlays/Loader";
 import { useScroll } from "@/hooks/useScroll";
 import { useAutoDrift } from "@/hooks/useAutoDrift";
 
@@ -37,8 +37,8 @@ export default function Home() {
     <main style={{ width: "100vw", height: "100dvh" }}>
       <Canvas
         // Perspective camera — fov 14 (telephoto), starts directly in front of the head.
-        // SpiralCamera takes over positioning on the first frame.
-        camera={{ fov: 14, near: 0.1, far: 200, position: [0, 0, 1.3] }}
+        // CameraRig takes over positioning on the first frame.
+        camera={{ fov: 14, near: 0.1, far: 300, position: [0, 0, 1.3] }}
         shadows={{ type: THREE.PCFShadowMap }}
       >
         <color attach="background" args={["#050505"]} />
@@ -63,14 +63,14 @@ export default function Home() {
         {/* Rim light from behind — adds depth/edge separation */}
         <pointLight position={[-1, 2, -2]} intensity={10} color="#ffffff" />
 
-        {/* Camera controller — drives position along Archimedean spiral */}
-        <SpiralCamera />
+        {/* Camera controller — waypoint-based path with Bezier transitions */}
+        <CameraRig />
 
         {/* Ambient particle cloud centered on head */}
         <Particles />
 
         {/* S-0 face annotations — fade out and unmount as camera pulls back */}
-        <Annotations />
+        <HeadAnnotations />
 
         {/* All async assets (GLTFs, textures) under one Suspense — Loader shows progress */}
         <Suspense fallback={null}>
@@ -84,7 +84,7 @@ export default function Home() {
       <Loader />
 
       {/* WIP overlay — blurs canvas after last finished scene (update fromScrollT as scenes ship) */}
-      <DevOverlay fromScrollT={0.3} />
+      <DevOverlay fromScrollT={0.36} />
 
       {/* Intro overlay — name + scroll cue, fades out as straight pullback ends */}
       <IntroOverlay />

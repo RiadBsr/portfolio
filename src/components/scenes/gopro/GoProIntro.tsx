@@ -4,11 +4,11 @@ import { useStore } from '@/store/useStore'
 
 // ─── Timing (scrollT) ──────────────────────────────────────────────────────
 // Text appears BEFORE the GoPro 3D objects to build narrative context.
-// GoPro enterStart=0.226, enterEnd=0.235. We lead the text by ~0.04.
-const FADE_IN_START = 0.185   // camera swinging toward GoPro zone
-const FADE_IN_END   = 0.215   // fully readable before 3D objects appear
-const FADE_OUT_START = 0.248  // hemispheres have been open long enough
-const FADE_OUT_END   = 0.268  // text gone before close animation
+// GoPro enterStart=0.24, enterEnd=0.28. We lead the text by ~0.04.
+const FADE_IN_START = 0.20    // GoPro enters view as camera curves left
+const FADE_IN_END   = 0.24    // fully readable at dwell start
+const FADE_OUT_START = 0.30   // hemispheres have been open long enough
+const FADE_OUT_END   = 0.33   // text gone before close animation
 
 export function GoProIntro() {
   const scrollT = useStore((s) => s.scrollT)

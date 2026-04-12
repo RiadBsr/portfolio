@@ -2,22 +2,29 @@
 
 import * as THREE from 'three'
 import { useRef, useMemo, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF, useTexture } from '@react-three/drei'
 import { useSceneLifecycle, type SceneLifecycleState } from '@/hooks/useSceneLifecycle'
-import { SCENE_POSITIONS } from '@/components/SpiralCamera'
+import { SCENE_OBJECT_POSITIONS, SCENE_MOBILE_POSITIONS } from '@/components/camera/CameraRig'
 import { easeInOut, easeOut } from '@/utils/easing'
+import { damp } from 'maath/easing'
+import { GoProAnnotation } from './GoProAnnotation'
 
-// Shifted for INTRO_T=0.10: new = 0.10 + old * 0.90
+// Lifecycle timing — controls ANIMATIONS only, not mount/visibility.
+// The object is always present in world space; the camera travels to it.
 const LIFECYCLE = {
-  enterStart: 0.226,
-  enterEnd:   0.235,
-  exitStart:  0.307,
-  disposeAt:  0.334,
+  enterStart: 0.20,   // hemisphere open as camera curves and GoPro enters view
+  enterEnd:   0.24,   // camera arrives at dwell position
+  exitStart:  0.34,   // near end of dwell — hemispheres close back
+  disposeAt:  0.40,   // animations complete
 }
 
 // Hemisphere separation along local X when fully open
 const HEMI_OPEN_OFFSET = 0.6
+// Scene-wide entry rotation — start showing a bit of the front lens,
+// settle to pure side view by the end of the entering phase.
+const BASE_ROT_Y = Math.PI / 2          // side view (stitch seam faces camera)
+const ENTRY_ROT_Y_OFFSET = 0.55         // extra rotation at enter start — reveals front lens (opposite side)
 // Dwell progress thresholds for animation phases:
 // 0.0–0.20  — hemispheres stay fully open (intro text visible, appreciate the setup)
 // 0.20–0.40 — hemispheres close together
@@ -27,10 +34,20 @@ const OPEN_END = 0.2
 const CLOSE_END = 0.4
 const STITCH_START = 0.45
 const STITCH_END = 0.80
+// Wireframe on the hemispheres fades out as the stitch completes, selling the
+// "seam gone" moment. Starts slightly before STITCH_END so the lines melt away
+// as the textures lock in rather than popping off after.
+const WIRE_FADE_START = 0.70
+const WIRE_FADE_END = 0.82
+// Celebratory 180° spin after stitch finishes — sphere now appears seamless,
+// so showing the back half sells "the seam is gone from every angle".
+const SPIN_START = 0.83
+const SPIN_END = 0.95
 
 export function GoPro() {
   const lifecycle = useSceneLifecycle(LIFECYCLE)
-  if (!lifecycle.shouldMount) return null
+  // Always render — the object is persistent in world space.
+  // Only animations (hemisphere open/close, stitch) are gated by lifecycle phase.
   return <GoProScene lifecycle={lifecycle} />
 }
 
@@ -59,9 +76,11 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
   const gltf = useGLTF('/models/gopro.glb')
   const tex360 = useTexture('/textures/360.jpg')
   const tex360Unaligned = useTexture('/textures/360_unaligned.jpg')
+  const outerGroupRef = useRef<THREE.Group>(null!)
   const groupRef = useRef<THREE.Group>(null!)
   const frntRef = useRef<THREE.Object3D | null>(null)
   const backRef = useRef<THREE.Object3D | null>(null)
+  const hemiWireMatsRef = useRef<THREE.LineBasicMaterial[]>([])
   const mixTUniform = useRef({ value: 0.0 })
 
   const clone = useMemo(() => {
@@ -90,9 +109,11 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
         polygonOffsetUnits: 1,
       })
       const edges = new THREE.EdgesGeometry(mesh.geometry, 1)
-      mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+      const wireMat = new THREE.LineBasicMaterial({
         color: 0x000000, transparent: true, opacity: 0.5,
-      })))
+      })
+      wireMat.userData.baseOpacity = 0.5
+      mesh.add(new THREE.LineSegments(edges, wireMat))
     }
 
     // ── BACK hemisphere — blends from unaligned to aligned during stitch ──
@@ -122,9 +143,11 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
       }
       mesh.material = mat
       const edges = new THREE.EdgesGeometry(mesh.geometry, 1)
-      mesh.add(new THREE.LineSegments(edges, new THREE.LineBasicMaterial({
+      const wireMat = new THREE.LineBasicMaterial({
         color: 0x000000, transparent: true, opacity: 0.5,
-      })))
+      })
+      wireMat.userData.baseOpacity = 0.5
+      mesh.add(new THREE.LineSegments(edges, wireMat))
     }
 
     // ── GoPro camera body — flat B&W materials + wireframe ──
@@ -159,27 +182,60 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
   useEffect(() => {
     frntRef.current = clone.getObjectByName('FRNT') ?? null
     backRef.current = clone.getObjectByName('BACK') ?? null
+    const mats: THREE.LineBasicMaterial[] = []
+    for (const node of [frntRef.current, backRef.current]) {
+      node?.traverse((child) => {
+        if ((child as THREE.LineSegments).isLineSegments) {
+          const m = (child as THREE.LineSegments).material as THREE.LineBasicMaterial
+          if (m.userData.baseOpacity !== undefined) mats.push(m)
+        }
+      })
+    }
+    hemiWireMatsRef.current = mats
     return () => {
       frntRef.current = null
       backRef.current = null
+      hemiWireMatsRef.current = []
     }
   }, [clone])
 
-  useFrame(() => {
+  useFrame((_, delta) => {
     if (!groupRef.current) return
 
     const { phase, enterProgress, dwellProgress } = lifecycle
 
-    if (phase === 'entering') {
-      // Scale in with snappy ease-out (enterProgress already has easeInOut from lifecycle)
-      const t = easeOut(enterProgress, 2)
-      groupRef.current.scale.setScalar(Math.max(0.001, t))
-      // Hemispheres fully open during enter
-      if (frntRef.current) frntRef.current.position.x = HEMI_OPEN_OFFSET
-      if (backRef.current) backRef.current.position.x = -HEMI_OPEN_OFFSET
-    } else if (phase === 'dwelling' || phase === 'exiting') {
-      groupRef.current.scale.setScalar(1)
+    // Always full scale — persistent object, no pop-in
+    groupRef.current.scale.setScalar(1.4)
 
+    // Scene-wide entry rotation — reveal front lens briefly, settle to side view.
+    // enterProgress is already eased by useSceneLifecycle (easeInOut), so we use
+    // it linearly here. Rotation is then damped to smooth over scroll jitter.
+    if (outerGroupRef.current) {
+      let targetRotY: number
+      if (phase === 'idle') {
+        targetRotY = BASE_ROT_Y + ENTRY_ROT_Y_OFFSET
+      } else if (phase === 'entering') {
+        targetRotY = BASE_ROT_Y + ENTRY_ROT_Y_OFFSET * (1 - enterProgress)
+      } else {
+        targetRotY = BASE_ROT_Y
+      }
+      // Triggered 180° spin after stitch completes — additive, eased
+      if ((phase === 'dwelling' || phase === 'exiting') && dwellProgress >= SPIN_START) {
+        const spinT = Math.min(1, (dwellProgress - SPIN_START) / (SPIN_END - SPIN_START))
+        targetRotY += Math.PI * easeInOut(spinT)
+      } else if (phase === 'disposed') {
+        targetRotY += Math.PI
+      }
+      damp(outerGroupRef.current.rotation, 'y', targetRotY, 0.15, delta)
+    }
+
+    if (phase === 'entering') {
+      // Hemispheres spread open as camera approaches
+      const t = easeOut(enterProgress, 2)
+      const offset = HEMI_OPEN_OFFSET * t
+      if (frntRef.current) frntRef.current.position.x = offset
+      if (backRef.current) backRef.current.position.x = -offset
+    } else if (phase === 'dwelling' || phase === 'exiting') {
       if (dwellProgress < OPEN_END) {
         // Phase 0: hemispheres stay fully open
         if (frntRef.current) frntRef.current.position.x = HEMI_OPEN_OFFSET
@@ -202,10 +258,27 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
           mixTUniform.current.value = easeInOut(stitchT)
         }
       }
+    } else {
+      // idle or disposed — resting state: hemispheres closed together
+      if (frntRef.current) frntRef.current.position.x = 0
+      if (backRef.current) backRef.current.position.x = 0
+    }
+
+    // Hemisphere wireframe fade — tied to stitch completion
+    let wireT = 0
+    if (phase === 'dwelling' || phase === 'exiting') {
+      wireT = Math.min(1, Math.max(0, (dwellProgress - WIRE_FADE_START) / (WIRE_FADE_END - WIRE_FADE_START)))
+    } else if (phase === 'disposed') {
+      wireT = 1
+    }
+    for (const m of hemiWireMatsRef.current) {
+      m.opacity = (m.userData.baseOpacity as number) * (1 - wireT)
     }
   })
 
-  const pos = SCENE_POSITIONS[1]
+  const { size } = useThree()
+  const isMobile = size.width < 768
+  const pos = isMobile ? SCENE_MOBILE_POSITIONS[1] : SCENE_OBJECT_POSITIONS[1]
   // Compute stitch progress for the ring visual
   const { dwellProgress } = lifecycle
   const stitchActive = dwellProgress >= STITCH_START && dwellProgress <= STITCH_END
@@ -214,10 +287,13 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
     : 0
 
   return (
-    <group position={[pos.x, pos.y, pos.z]} rotation-y={0.3 * Math.PI}>
-      <group ref={groupRef} visible={lifecycle.visible} scale={0.001}>
-        <primitive object={clone} />
-        {stitchActive && <StitchRing progress={stitchProgress} />}
+    <group position={[pos.x, pos.y, pos.z]}>
+      <group ref={outerGroupRef} rotation-y={BASE_ROT_Y}>
+        <group ref={groupRef}>
+          <primitive object={clone} />
+          {stitchActive && <StitchRing progress={stitchProgress} />}
+          <GoProAnnotation lifecycle={lifecycle} fadeOutStart={OPEN_END} fadeOutEnd={CLOSE_END} />
+        </group>
       </group>
     </group>
   )

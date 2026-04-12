@@ -5,8 +5,9 @@ Interactive 3D Head with bone-level cursor tracking + blink animation
 import * as THREE from 'three'
 import React from 'react'
 import { JSX } from 'react/jsx-runtime'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
+import { SCENE_OBJECT_POSITIONS, SCENE_MOBILE_POSITIONS } from '@/components/camera/CameraRig'
 import { dampQ, damp } from 'maath/easing'
 import { useStore } from '@/store/useStore'
 
@@ -494,8 +495,12 @@ export function Model(props: JSX.IntrinsicElements['group']) {
     }
   })
 
+  const { size } = useThree()
+  const isMobile = size.width < 768
+  const pos = isMobile ? SCENE_MOBILE_POSITIONS[0] : SCENE_OBJECT_POSITIONS[0]
+
   return (
-    <group {...props}>
+    <group {...props} position={[pos.x, pos.y, pos.z]}>
       <primitive object={clone} />
     </group>
   )

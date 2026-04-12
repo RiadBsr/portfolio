@@ -95,13 +95,11 @@ export function ChatPanel() {
         zIndex: 50,
         display: 'flex',
         flexDirection: 'column',
-        background: 'rgba(8, 8, 8, 0.92)',
+        background: 'rgba(5, 5, 5, 0.92)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
         overflow: 'hidden',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
         animation: 'chatPanelIn 0.3s ease-out',
         touchAction: 'none',
       }}
@@ -121,12 +119,11 @@ export function ChatPanel() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', minWidth: 0 }}>
           <div
             style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
+              width: 5,
+              height: 5,
               flexShrink: 0,
               background: '#4ade80',
-              boxShadow: '0 0 8px rgba(74, 222, 128, 0.6), 0 0 16px rgba(74, 222, 128, 0.2)',
+              boxShadow: '0 0 6px rgba(74, 222, 128, 0.5)',
               animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }}
           />
@@ -154,7 +151,6 @@ export function ChatPanel() {
                 color: 'rgba(255, 255, 255, 0.7)',
                 background: 'none',
                 border: '1px solid rgba(255, 255, 255, 0.18)',
-                borderRadius: '4px',
                 padding: '4px 9px',
                 cursor: 'pointer',
               }}
@@ -171,7 +167,6 @@ export function ChatPanel() {
               color: 'rgba(255, 255, 255, 0.72)',
               background: 'rgba(255, 255, 255, 0.07)',
               border: '1px solid rgba(255, 255, 255, 0.18)',
-              borderRadius: '4px',
               padding: '4px 9px',
               cursor: 'pointer',
             }}
@@ -210,14 +205,15 @@ export function ChatPanel() {
           >
             <p
               style={{
-                ...dmSans,
-                fontSize: '13px',
+                ...mono,
+                fontSize: '11px',
+                letterSpacing: '0.08em',
                 color: 'rgba(255, 255, 255, 0.3)',
                 textAlign: 'center',
-                lineHeight: 1.5,
+                lineHeight: 1.6,
               }}
             >
-              Hi! I&apos;m Riad&apos;s AI clone. Ask me anything about his work, skills, or experience.
+              RIAD&apos;S AI CLONE // ASK ABOUT WORK, SKILLS, EXPERIENCE
             </p>
             <div
               style={{
@@ -238,8 +234,7 @@ export function ChatPanel() {
                     color: 'rgba(255, 255, 255, 0.62)',
                     background: 'rgba(255, 255, 255, 0.03)',
                     border: '1px solid rgba(255, 255, 255, 0.18)',
-                    borderRadius: '20px',
-                    padding: '6px 14px',
+                    padding: '5px 10px',
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                   }}
@@ -273,7 +268,6 @@ export function ChatPanel() {
               color: '#f87171',
               background: 'rgba(248, 113, 113, 0.08)',
               border: '1px solid rgba(248, 113, 113, 0.15)',
-              borderRadius: '8px',
               padding: '10px 14px',
             }}
           >
@@ -309,8 +303,7 @@ export function ChatPanel() {
             fontSize: '13px',
             color: 'rgba(255, 255, 255, 0.85)',
             background: 'rgba(255, 255, 255, 0.04)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
             padding: '10px 14px',
             outline: 'none',
           }}
@@ -328,8 +321,7 @@ export function ChatPanel() {
             background: !input.trim() || isStreaming
               ? 'rgba(255, 255, 255, 0.06)'
               : 'rgba(255, 255, 255, 0.12)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '8px',
+            border: '1px solid rgba(255, 255, 255, 0.22)',
             padding: '10px 16px',
             cursor: !input.trim() || isStreaming ? 'default' : 'pointer',
             transition: 'all 0.2s',
@@ -375,14 +367,14 @@ function MessageBubble({
           fontSize: '13px',
           lineHeight: 1.6,
           padding: '10px 14px',
-          borderRadius: isUser ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
           background: isUser
-            ? 'rgba(255, 255, 255, 0.08)'
-            : 'rgba(255, 255, 255, 0.02)',
+            ? 'rgba(255, 255, 255, 0.06)'
+            : 'none',
           color: isUser
             ? 'rgba(255, 255, 255, 0.85)'
-            : 'rgba(255, 255, 255, 0.75)',
-          borderLeft: isUser ? 'none' : '2px solid rgba(255, 255, 255, 0.1)',
+            : 'rgba(255, 255, 255, 0.72)',
+          border: isUser ? '1px solid rgba(255, 255, 255, 0.12)' : 'none',
+          borderLeft: isUser ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(255, 255, 255, 0.15)',
           whiteSpace: 'pre-wrap',
           wordBreak: 'break-word',
         }}

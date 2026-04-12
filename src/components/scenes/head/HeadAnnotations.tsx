@@ -19,7 +19,7 @@ const ANNOTATIONS = [
     id: 'edges',
     pos: [-0.12, 0.05, -0.12] as [number, number, number],
     label: 'DIGITAL SCULPT',
-    detail: 'Low poly representation of Riad Boussoura (more smiley IRL)',
+    detail: 'Low poly representation of Riad Boussoura\n(more smiley IRL)',
     delay: '0.4s',
     flip: true,
   },
@@ -27,14 +27,14 @@ const ANNOTATIONS = [
     id: 'rig',
     pos: [0.10, -0.1, -0.12] as [number, number, number],
     label: 'SKELETAL RIG',
-    detail: 'Fully rigged in Blender with pupil dilatation interactivity',
+    detail: 'Fully rigged in Blender',
     delay: '0.8s',
     flip: false,
   },
 ]
 
-const FADE_START = 0.04
-const FADE_END = 0.08
+const FADE_START = 0.03
+const FADE_END = 0.07
 
 const LINE_COLLAPSED = 34
 const LINE_EXPANDED = 72
@@ -96,79 +96,80 @@ function AnnotationItem({
         />
       )}
       <Html position={ann.pos} style={{ pointerEvents: 'none' }}>
-        {/* Zero-size anchor: dot is always at the 3D coordinate */}
-        <div style={{ position: 'relative', width: 0, height: 0, pointerEvents: 'none' }}>
+        {/* Zero-size anchor at the 3D point. Dot is pinned; line grows outward;
+            label+detail track lineW with the same eased transition so nothing jumps. */}
+        <div
+          onAnimationEnd={onAnimEnd}
+          style={{
+            position: 'relative',
+            width: 0,
+            height: 0,
+            pointerEvents: 'none',
+            opacity: revealed.current ? opacity : undefined,
+            animation: revealed.current
+              ? undefined
+              : `holoReveal 0.9s ease-out ${ann.delay} both`,
+          }}
+        >
+          {/* Dot — pinned exactly at the 3D anchor */}
           <div
-            onAnimationEnd={onAnimEnd}
+            style={{
+              position: 'absolute',
+              left: '0px',
+              top: '0px',
+              width: `${(isMobile ? 1.5 : 1.8) * 2}px`,
+              height: `${(isMobile ? 1.5 : 1.8) * 2}px`,
+              borderRadius: '50%',
+              background: hovered ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.72)',
+              transform: 'translate(-50%, -50%)',
+              transition: 'background 0.3s ease',
+            }}
+          />
+          {/* Horizontal line — grows outward from the dot in the flip direction */}
+          <div
             style={{
               position: 'absolute',
               left: flip ? 'auto' : '0px',
               right: flip ? '0px' : 'auto',
+              top: '0px',
+              width: `${lineW}px`,
+              height: '1px',
+              background: 'rgba(255,255,255,0.5)',
+              transform: 'translateY(-50%)',
+              transition: 'width 0.4s cubic-bezier(0.22,1,0.36,1)',
+            }}
+          />
+          {/* Label + detail stack — anchored to the far end of the line, tracks lineW */}
+          <div
+            style={{
+              position: 'absolute',
+              left: flip ? 'auto' : `${lineW + (isMobile ? 4 : 6)}px`,
+              right: flip ? `${lineW + (isMobile ? 4 : 6)}px` : 'auto',
               top: '0px',
               transform: 'translateY(-50%)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: flip ? 'flex-end' : 'flex-start',
               pointerEvents: 'none',
-              opacity: revealed.current ? opacity : undefined,
-              animation: revealed.current
-                ? undefined
-                : `holoReveal 0.9s ease-out ${ann.delay} both`,
+              transition:
+                'left 0.4s cubic-bezier(0.22,1,0.36,1), right 0.4s cubic-bezier(0.22,1,0.36,1)',
             }}
           >
-            {/* Label row */}
-            <div
+            <span
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: isMobile ? '4px' : '6px',
-                flexDirection: flip ? 'row-reverse' : 'row',
+                fontFamily: 'var(--font-space-mono, monospace)',
+                fontSize: isMobile ? '10px' : '12px',
+                letterSpacing: isMobile ? '0.12em' : '0.18em',
+                color: hovered ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.8)',
+                textTransform: 'uppercase',
+                userSelect: 'none',
+                whiteSpace: 'nowrap',
+                transition: 'color 0.3s ease',
+                textShadow: hovered ? '0 0 6px rgba(255,255,255,0.3)' : 'none',
               }}
             >
-              {/* Dot + line */}
-              <svg
-                width={lineW}
-                height="2"
-                style={{
-                  overflow: 'visible',
-                  flexShrink: 0,
-                  transition: 'width 0.4s cubic-bezier(0.22,1,0.36,1)',
-                }}
-              >
-                <line
-                  x1={flip ? lineW : 0}
-                  y1="0"
-                  x2={flip ? 0 : lineW}
-                  y2="0"
-                  stroke="rgba(255,255,255,0.5)"
-                  strokeWidth="0.8"
-                />
-                <circle
-                  cx={flip ? lineW : 0}
-                  cy="0"
-                  r={isMobile ? 1.5 : 1.8}
-                  fill={hovered ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.72)'}
-                  style={{ transition: 'fill 0.3s ease' }}
-                />
-              </svg>
-              <span
-                style={{
-                  fontFamily: 'var(--font-space-mono, monospace)',
-                  fontSize: isMobile ? '10px' : '12px',
-                  letterSpacing: isMobile ? '0.12em' : '0.18em',
-                  color: hovered ? 'rgba(255,255,255,0.94)' : 'rgba(255,255,255,0.8)',
-                  textTransform: 'uppercase',
-                  userSelect: 'none',
-                  whiteSpace: 'nowrap',
-                  transition: 'color 0.3s ease',
-                  textShadow: hovered ? '0 0 6px rgba(255,255,255,0.3)' : 'none',
-                }}
-              >
-                {ann.label}
-              </span>
-            </div>
-
-            {/* Detail row — desktop hover only */}
+              {ann.label}
+            </span>
             {!isMobile && (
               <div
                 style={{
@@ -177,9 +178,7 @@ function AnnotationItem({
                   opacity: hovered ? 1 : 0,
                   transition:
                     'max-height 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease',
-                  marginTop: '3px',
-                  paddingLeft: flip ? '0' : `${lineW + 6}px`,
-                  paddingRight: flip ? `${lineW + 6}px` : '0',
+                  marginTop: hovered ? '3px' : '0px',
                 }}
               >
                 <span
@@ -189,7 +188,7 @@ function AnnotationItem({
                     letterSpacing: '0.08em',
                     color: 'rgba(255,255,255,0.72)',
                     userSelect: 'none',
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'pre',
                     display: 'block',
                     textAlign: flip ? 'right' : 'left',
                   }}
@@ -205,7 +204,7 @@ function AnnotationItem({
   )
 }
 
-export function Annotations() {
+export function HeadAnnotations() {
   const scrollT = useStore((s) => s.scrollT)
   const chatMode = useStore((s) => s.chatMode)
   const gpuReady = useStore((s) => s.gpuReady)

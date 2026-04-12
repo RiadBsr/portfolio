@@ -11,17 +11,17 @@ const LINKS = {
 }
 
 // Scene labels and target scrollT values for the right-edge ticker.
-// Dwell midpoints shifted for INTRO_T=0.10: new = 0.10 + old * 0.90
+// Values are dwell midpoints from CameraRig TIMELINE.
 const SCENES = [
   { label: 'S·0', t: 0 },
-  { label: 'S·1', t: 0.27 },
-  { label: 'S·2', t: 0.35 },
-  { label: 'S·3', t: 0.49 },
-  { label: 'S·4', t: 0.58 },
-  { label: 'S·5', t: 0.68 },
+  { label: 'S·1', t: 0.30 },
+  { label: 'S·2', t: 0.47 },
+  { label: 'S·3', t: 0.54 },
+  { label: 'S·4', t: 0.62 },
+  { label: 'S·5', t: 0.70 },
   { label: 'S·6', t: 0.78 },
-  { label: 'S·7', t: 0.87 },
-  { label: 'S·8', t: 0.96 },
+  { label: 'S·7', t: 0.86 },
+  { label: 'S·8', t: 0.95 },
 ]
 
 const mono: CSSProperties = {

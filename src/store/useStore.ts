@@ -2,12 +2,10 @@
 
 import { create } from 'zustand'
 
-// Scene activation boundaries — the scrollT value at which each scene
-// becomes the "active" scene (drives camera look-at focal point).
-// Aligned with storyboard enter-start percentages.
-// Boundaries shifted to account for the 10% intro phase (INTRO_T=0.10).
-// Formula: new = 0.10 + old * 0.90  (except S-0 which stays at 0)
-const SCENE_BOUNDARIES = [0, 0.21, 0.48, 0.55, 0.62, 0.69, 0.77, 0.86, 0.95] as const
+// Scene activation boundaries — the scrollT at which each scene becomes "active".
+// Aligned with CameraRig PATH_SEGMENTS.
+// S-0=0, S-1=0.18 (mid-transition, GoPro entering view), S-2+=placeholders.
+const SCENE_BOUNDARIES = [0, 0.18, 0.38, 0.48, 0.56, 0.64, 0.72, 0.80, 0.88] as const
 
 function computeActiveScene(t: number): number {
   for (let i = SCENE_BOUNDARIES.length - 1; i >= 0; i--) {

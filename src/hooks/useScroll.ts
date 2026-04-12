@@ -4,21 +4,25 @@ import { useEffect, useRef } from 'react'
 import { useStore } from '@/store/useStore'
 
 // Total virtual scroll distance. The user scrolls through 6000px worth
-// of input to move scrollT from 0 → 1 along the spiral.
+// of input to move scrollT from 0 → 1 along the path.
 const VIRTUAL_HEIGHT = 6000
+
+// Hard scroll ceiling — prevents scrolling past the last finished scene.
+// Matches DevOverlay fromScrollT + fadeRange so the user hits the WIP wall.
+// Update this as new scenes ship. Remove when all scenes are complete.
+const SCROLL_T_MAX = 0.40
 
 // Exponential smoothing speed (higher = snappier camera feel).
 // 10 gives a TikTok-like fast attack with smooth settling.
 const SMOOTH_SPEED = 10
 
-// Scene-aware scroll speed — dramatically slow down in dwell ranges
-// so the user's scroll input primarily drives scene animations
+// Scene-aware scroll speed — slow down in dwell ranges so the user's
+// scroll input primarily drives scene animations, not camera travel.
+// Aligned with CameraRig PATH_SEGMENTS.
 function getScrollSpeedMultiplier(t: number): number {
-  // Intro phase: gentle slowdown so the pullback feels deliberate
-  if (t < 0.10) return 0.5
-  // S-1 GoPro: heavy slowdown (shifted for INTRO_T=0.10, old 0.14–0.26 → new 0.226–0.334)
-  if (t >= 0.226 && t <= 0.334) return 0.1
-  return 1.0
+  if (t <= 0.12) return 0.3                       // S-0 Head dwell (annotations)
+  if (t >= 0.24 && t <= 0.36) return 0.15         // S-1 GoPro dwell (animations)
+  return 1.0                                       // Transitions + future
 }
 
 export function useScroll() {
@@ -67,9 +71,10 @@ export function useScroll() {
       setUserHasInteracted(true)
       const currentT = targetRef.current / VIRTUAL_HEIGHT
       const speed = getScrollSpeedMultiplier(currentT)
+      const maxPx = SCROLL_T_MAX * VIRTUAL_HEIGHT
       targetRef.current = Math.max(
         0,
-        Math.min(VIRTUAL_HEIGHT, targetRef.current + e.deltaY * speed)
+        Math.min(maxPx, targetRef.current + e.deltaY * speed)
       )
     }
 
@@ -86,10 +91,11 @@ export function useScroll() {
       setUserHasInteracted(true)
       const currentT = targetRef.current / VIRTUAL_HEIGHT
       const speed = getScrollSpeedMultiplier(currentT)
+      const maxPx = SCROLL_T_MAX * VIRTUAL_HEIGHT
       // ×2 multiplier so touch swipe feels as responsive as wheel
       targetRef.current = Math.max(
         0,
-        Math.min(VIRTUAL_HEIGHT, targetRef.current + deltaY * 2 * speed)
+        Math.min(maxPx, targetRef.current + deltaY * 2 * speed)
       )
     }
 
