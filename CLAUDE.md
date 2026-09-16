@@ -74,6 +74,8 @@ docs/
 
 ## Project Status
 
+- **SITE PAUSED:** the deployed site serves only the pause screen at `src/app/page.tsx`. `src/proxy.ts` 404s every other route and asset, the portfolio page and branded icons live in the non-routed `src/app/_paused/`, and the chat route is short-circuited by `SITE_PAUSED`. Full restore steps in README.md ("Paused state"). Development continues normally — the paused page and all components still build and type-check.
+
 - **Phase 1 (COMPLETE):** Head scene, spiral camera, scroll/drift, HUD, annotations, particles.
 - **Phase 2 (IN PROGRESS):** S-1 GoPro scene implemented with lifecycle, focal points, scroll slowdown. Remaining scenes: Sorbonne, BargMe, Hackathon, Samsung, Origin, Art Gallery, Conversion. See `docs/PLAN.md`.
 - **Phase 3 (NOT STARTED):** Chat UI + Mistral LLM integration. See `docs/PLAN.md`.

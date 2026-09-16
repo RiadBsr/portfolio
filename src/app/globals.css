@@ -67,3 +67,19 @@ body {
     display: flex !important;
   }
 }
+
+/* Pause screen — slow breathing fade on the headline */
+@keyframes pausePulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+.pause-pulse {
+  animation: pausePulse 4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pause-pulse {
+    animation: none;
+  }
+}

@@ -73,8 +73,18 @@ function getClient(): GoogleGenAI {
   return new GoogleGenAI({ apiKey })
 }
 
+// While the site is paused this endpoint answers nothing. `src/proxy.ts`
+// already 404s every /api route; this is the second lock, so the system prompt
+// is unreachable even if the gate is ever bypassed.
+// To bring it back, see "Paused state" in README.md.
+const SITE_PAUSED = true
+
 // ─── Route handler ───────────────────────────────────────────────────────────
 export async function POST(request: Request) {
+  if (SITE_PAUSED) {
+    return new Response(null, { status: 404 })
+  }
+
   try {
     // Parse and validate request body
     const body = await request.json().catch(() => null)
