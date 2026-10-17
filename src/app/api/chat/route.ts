@@ -10,6 +10,12 @@ const RATE_LIMIT = {
   windowMs: 60_000,
 }
 
+// Per-request size caps — the daily quota above is shared by every visitor,
+// so one scripted client must not be able to burn it with huge payloads.
+// ponytail: no per-IP limit (in-memory buckets are per-instance anyway); add a KV-backed one if abuse shows up.
+const MAX_MESSAGES = 40      // ~20 exchanges
+const MAX_MESSAGE_CHARS = 2000
+
 interface RateBucket {
   timestamps: number[]  // request timestamps within the current minute window
   dailyCount: number
@@ -89,6 +95,13 @@ export async function POST(request: Request) {
       )
     }
 
+    if (body.messages.length > MAX_MESSAGES) {
+      return Response.json(
+        { error: 'This conversation is getting long. Press CLEAR to start a fresh one.' },
+        { status: 400 }
+      )
+    }
+
     // Validate message structure
     for (const msg of body.messages) {
       if (
@@ -99,6 +112,12 @@ export async function POST(request: Request) {
       ) {
         return Response.json(
           { error: 'Each message must have a role ("user" | "assistant") and a content string.' },
+          { status: 400 }
+        )
+      }
+      if (msg.content.length > MAX_MESSAGE_CHARS) {
+        return Response.json(
+          { error: `Messages are limited to ${MAX_MESSAGE_CHARS} characters.` },
           { status: 400 }
         )
       }
