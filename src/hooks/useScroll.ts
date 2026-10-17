@@ -7,11 +7,6 @@ import { useStore } from '@/store/useStore'
 // of input to move scrollT from 0 → 1 along the path.
 const VIRTUAL_HEIGHT = 6000
 
-// Hard scroll ceiling — prevents scrolling past the last finished scene.
-// Matches DevOverlay fromScrollT + fadeRange so the user hits the WIP wall.
-// Update this as new scenes ship. Remove when all scenes are complete.
-const SCROLL_T_MAX = 0.40
-
 // Exponential smoothing speed (higher = snappier camera feel).
 // 10 gives a TikTok-like fast attack with smooth settling.
 const SMOOTH_SPEED = 10
@@ -25,13 +20,18 @@ function getScrollSpeedMultiplier(t: number): number {
   return 1.0                                       // Transitions + future
 }
 
+// Adds a wheel/touch delta (virtual px) to the store's scroll target.
+// Before the first interaction auto-drift owns scrollT, so start from there.
+function nudge(deltaPx: number) {
+  const { userHasInteracted, scrollT, scrollTarget, scrollTo } = useStore.getState()
+  const base = userHasInteracted ? scrollTarget : scrollT
+  scrollTo(base + (deltaPx * getScrollSpeedMultiplier(base)) / VIRTUAL_HEIGHT)
+}
+
 export function useScroll() {
   const setScrollT = useStore((s) => s.setScrollT)
-  const setUserHasInteracted = useStore((s) => s.setUserHasInteracted)
 
-  // Raw accumulated target (virtual pixels, not yet smoothed)
-  const targetRef = useRef(0)
-  // Smoothed position (virtual pixels) — camera reads this via scrollT
+  // Smoothed position (0 → 1) — camera reads this via scrollT
   const currentRef = useRef(0)
   const rafIdRef = useRef(0)
   const touchYRef = useRef(0)
@@ -43,39 +43,24 @@ export function useScroll() {
       const delta = lastTime ? Math.min((time - lastTime) / 1000, 0.1) : 0
       lastTime = time
 
-      // Only drive scrollT after the user has taken control.
-      // Before that, useAutoDrift owns scrollT and we must not override it.
-      if (useStore.getState().userHasInteracted && !useStore.getState().chatMode) {
+      const { userHasInteracted, chatMode, scrollT, scrollTarget } = useStore.getState()
+      if (!userHasInteracted) {
+        // useAutoDrift owns scrollT — track it so the handoff never jumps
+        currentRef.current = scrollT
+      } else if (!chatMode) {
         const factor = delta ? 1 - Math.exp(-SMOOTH_SPEED * delta) : 0
-        currentRef.current += (targetRef.current - currentRef.current) * factor
-        setScrollT(Math.max(0, Math.min(1, currentRef.current / VIRTUAL_HEIGHT)))
+        currentRef.current += (scrollTarget - currentRef.current) * factor
+        setScrollT(currentRef.current)
       }
 
       rafIdRef.current = requestAnimationFrame(tick)
     }
 
-    // On first user input, sync the accumulator to wherever auto-drift left
-    // scrollT so there is no jump when the user takes manual control.
-    function syncFromStore() {
-      if (!useStore.getState().userHasInteracted) {
-        const t = useStore.getState().scrollT
-        currentRef.current = t * VIRTUAL_HEIGHT
-        targetRef.current = currentRef.current
-      }
-    }
-
     function onWheel(e: WheelEvent) {
-      e.preventDefault()
+      // In chat mode let the wheel through so the chat history can scroll
       if (useStore.getState().chatMode) return
-      syncFromStore()
-      setUserHasInteracted(true)
-      const currentT = targetRef.current / VIRTUAL_HEIGHT
-      const speed = getScrollSpeedMultiplier(currentT)
-      const maxPx = SCROLL_T_MAX * VIRTUAL_HEIGHT
-      targetRef.current = Math.max(
-        0,
-        Math.min(maxPx, targetRef.current + e.deltaY * speed)
-      )
+      e.preventDefault()
+      nudge(e.deltaY)
     }
 
     function onTouchStart(e: TouchEvent) {
@@ -87,16 +72,8 @@ export function useScroll() {
       if (useStore.getState().chatMode) return
       const deltaY = touchYRef.current - e.touches[0].clientY
       touchYRef.current = e.touches[0].clientY
-      syncFromStore()
-      setUserHasInteracted(true)
-      const currentT = targetRef.current / VIRTUAL_HEIGHT
-      const speed = getScrollSpeedMultiplier(currentT)
-      const maxPx = SCROLL_T_MAX * VIRTUAL_HEIGHT
       // ×2 multiplier so touch swipe feels as responsive as wheel
-      targetRef.current = Math.max(
-        0,
-        Math.min(maxPx, targetRef.current + deltaY * 2 * speed)
-      )
+      nudge(deltaY * 2)
     }
 
     window.addEventListener('wheel', onWheel, { passive: false })
@@ -110,5 +87,5 @@ export function useScroll() {
       window.removeEventListener('touchmove', onTouchMove)
       cancelAnimationFrame(rafIdRef.current)
     }
-  }, [setScrollT, setUserHasInteracted])
+  }, [setScrollT])
 }

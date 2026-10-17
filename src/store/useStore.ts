@@ -7,6 +7,11 @@ import { create } from 'zustand'
 // S-0=0, S-1=0.18 (mid-transition, GoPro entering view), S-2+=placeholders.
 const SCENE_BOUNDARIES = [0, 0.18, 0.38, 0.48, 0.56, 0.64, 0.72, 0.80, 0.88] as const
 
+// Hard scroll ceiling — prevents scrolling past the last finished scene.
+// Matches DevOverlay fromScrollT + fadeRange so the user lands on the end card.
+// Update this as new scenes ship. Remove when all scenes are complete.
+export const SCROLL_T_MAX = 0.40
+
 function computeActiveScene(t: number): number {
   for (let i = SCENE_BOUNDARIES.length - 1; i >= 0; i--) {
     if (t >= SCENE_BOUNDARIES[i]) return i
@@ -17,6 +22,8 @@ function computeActiveScene(t: number): number {
 interface StoreState {
   // 0 → 1, normalized scroll progress along the spiral
   scrollT: number
+  // where scrollT is heading — useScroll smooths scrollT toward it once the user has interacted
+  scrollTarget: number
   // derived from scrollT via SCENE_BOUNDARIES
   activeScene: number
   // true while the 3D tablet chat is open
@@ -31,8 +38,9 @@ interface StoreState {
   isTalking: boolean
 
   setScrollT: (t: number) => void
+  // the only way user input (wheel, touch, HUD links) moves the camera
+  scrollTo: (t: number) => void
   setChatMode: (mode: boolean) => void
-  setUserHasInteracted: (interacted: boolean) => void
   setGpuReady: (ready: boolean) => void
   setTalking: (talking: boolean) => void
   pupilDilate: () => void
@@ -41,6 +49,7 @@ interface StoreState {
 
 export const useStore = create<StoreState>()((set) => ({
   scrollT: 0,
+  scrollTarget: 0,
   activeScene: 0,
   chatMode: false,
   userHasInteracted: false,
@@ -53,9 +62,13 @@ export const useStore = create<StoreState>()((set) => ({
       activeScene: computeActiveScene(t),
     }),
 
-  setChatMode: (mode: boolean) => set({ chatMode: mode }),
+  scrollTo: (t: number) =>
+    set({
+      scrollTarget: Math.max(0, Math.min(SCROLL_T_MAX, t)),
+      userHasInteracted: true,
+    }),
 
-  setUserHasInteracted: (interacted: boolean) => set({ userHasInteracted: interacted }),
+  setChatMode: (mode: boolean) => set({ chatMode: mode }),
 
   setGpuReady: (ready: boolean) => set({ gpuReady: ready }),
 

@@ -36,6 +36,19 @@ function gaussRandom(): number {
 
 const _sample = new THREE.Vector3()
 
+// Square point sprites read as grey boxes when a particle drifts near the camera:
+// round them off and cap their on-screen size (`scale` is half the drawing-buffer height).
+function roundCappedPoints(shader: THREE.WebGLProgramParametersWithUniforms) {
+  shader.vertexShader = shader.vertexShader.replace(
+    '#include <fog_vertex>',
+    '#include <fog_vertex>\n  gl_PointSize = min(gl_PointSize, scale * 0.02);',
+  )
+  shader.fragmentShader = shader.fragmentShader.replace(
+    'void main() {',
+    'void main() {\n  if (length(gl_PointCoord - 0.5) > 0.5) discard;',
+  )
+}
+
 export function Particles() {
   const positions = useMemo(() => {
     const sceneCount = CAMERA_STOPS.length - 1
@@ -87,6 +100,7 @@ export function Particles() {
         opacity={0.3}
         sizeAttenuation
         depthWrite={false}
+        onBeforeCompile={roundCappedPoints}
       />
     </points>
   )

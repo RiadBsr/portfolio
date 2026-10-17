@@ -81,6 +81,8 @@ export function useChat(): UseChatReturn {
 
       const decoder = new TextDecoder()
       let assistantContent = ''
+      // A network read can end mid-line — carry the partial line into the next read
+      let buffer = ''
 
       // Add a placeholder assistant message
       setMessages((prev) => [...prev, { role: 'assistant', content: '' }])
@@ -89,8 +91,9 @@ export function useChat(): UseChatReturn {
         const { done, value } = await reader.read()
         if (done) break
 
-        const chunk = decoder.decode(value, { stream: true })
-        const lines = chunk.split('\n')
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() ?? ''
 
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue
@@ -98,28 +101,21 @@ export function useChat(): UseChatReturn {
 
           if (payload === '[DONE]') continue
 
-          try {
-            const parsed = JSON.parse(payload)
-            if (parsed.error) {
-              throw new Error(parsed.error)
-            }
-            if (parsed.text) {
-              assistantContent += parsed.text
-              // Update the last message (assistant) with accumulated content
-              setMessages((prev) => {
-                const updated = [...prev]
-                updated[updated.length - 1] = {
-                  role: 'assistant',
-                  content: assistantContent,
-                }
-                return updated
-              })
-            }
-          } catch (e) {
-            // Skip malformed chunks silently unless it's a thrown error
-            if (e instanceof Error && e.message !== 'Unexpected end of JSON input') {
-              throw e
-            }
+          const parsed = JSON.parse(payload)
+          if (parsed.error) {
+            throw new Error(parsed.error)
+          }
+          if (parsed.text) {
+            assistantContent += parsed.text
+            // Update the last message (assistant) with accumulated content
+            setMessages((prev) => {
+              const updated = [...prev]
+              updated[updated.length - 1] = {
+                role: 'assistant',
+                content: assistantContent,
+              }
+              return updated
+            })
           }
         }
       }
