@@ -165,7 +165,10 @@ function AnnotationItem({
                 userSelect: 'none',
                 whiteSpace: 'nowrap',
                 transition: 'color 0.3s ease',
-                textShadow: hovered ? '0 0 6px rgba(255,255,255,0.3)' : 'none',
+                // Dark halo keeps labels legible where they cross the white floating rocks
+                textShadow: hovered
+                  ? '0 0 4px rgba(0,0,0,0.9), 0 0 6px rgba(255,255,255,0.3)'
+                  : '0 0 4px rgba(0,0,0,0.9)',
               }}
             >
               {ann.label}
@@ -222,7 +225,8 @@ export function HeadAnnotations() {
 
   return (
     <>
-      {ANNOTATIONS.map((ann) => (
+      {/* Left-pointing (flipped) labels run off the screen edge on phones */}
+      {ANNOTATIONS.filter((ann) => !(isMobile && ann.flip)).map((ann) => (
         <AnnotationItem key={ann.id} ann={ann} opacity={opacity} isMobile={isMobile} />
       ))}
     </>

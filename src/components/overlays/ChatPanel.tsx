@@ -239,12 +239,13 @@ export function ChatPanel() {
                     transition: 'all 0.2s',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)'
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.7)'
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.35)'
+                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.85)'
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
-                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.45)'
+                    // Restore the initial style values above
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.18)'
+                    e.currentTarget.style.color = 'rgba(255, 255, 255, 0.62)'
                   }}
                 >
                   {prompt}
@@ -292,6 +293,7 @@ export function ChatPanel() {
         <input
           ref={inputRef}
           type="text"
+          maxLength={2000}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}

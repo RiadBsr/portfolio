@@ -61,14 +61,15 @@ docs/
 - **Scene lifecycle** managed via `useSceneLifecycle` hook — returns phase (`idle`/`entering`/`dwelling`/`exiting`/`disposed`), progress values, and visibility. Scene components split into outer guard (lifecycle check) and inner renderer (hooks + GLTF).
 - **Scroll speed zones** in `useScroll.ts` — `getScrollSpeedMultiplier(t)` returns a per-scene speed factor. Scene dwell ranges use 0.2x multiplier so scroll mainly drives scene animations, not camera movement.
 - **Mobile adaptations:** gyroscope replaces cursor input, eyelashes hidden below 768px, dynamic FOV on portrait screens, touch events get 2x multiplier.
-- **DevOverlay (WIP gate):** `<DevOverlay fromScrollT={0.14} />` in `page.tsx` blurs the canvas and shows "WORK IN PROGRESS" when scrollT crosses the threshold. **When a new scene is finished**, update `fromScrollT` to the `enterStart` of the next unfinished scene. When all scenes are complete, remove the component entirely. The overlay sits at `zIndex: 5` (below HUD at 10, above canvas).
+- **DevOverlay (end card + WIP gate):** `<DevOverlay fromScrollT={0.36} />` in `page.tsx` blurs the canvas and shows a contact end card (AI chat, resume, email, LinkedIn, GitHub) with a small "More scenes coming soon" line. **When a new scene is finished**, update `fromScrollT` to the `enterStart` of the next unfinished scene, raise `SCROLL_T_MAX` in `useStore.ts`, and add the scene to the HUD ticker `SCENES`. When all scenes are complete, the S-8 conversion scene replaces it. The overlay sits at `zIndex: 5` (below HUD at 10, above canvas).
+- **Scroll ownership:** every user-driven move (wheel, touch, HUD ticker/name) goes through `scrollTo(t)` in the store, which sets `scrollTarget` (clamped to `SCROLL_T_MAX`). `useScroll` smooths `scrollT` toward it. Never call `setScrollT` from UI code: `useScroll` overwrites it every frame.
 
 ## Gotchas
 
 - **Wireframe skinning hack:** `Head.tsx` duck-types `LineSegments` as `isSkinnedMesh` so Three.js uploads bone matrices. Do not refactor without understanding `createSharpEdgeGeometry`.
 - **polygonOffset on all mesh materials** prevents Z-fighting between mesh surfaces and wireframe overlay. Must be preserved on any new materials.
 - **Three.js r183 deprecation warnings** are suppressed in `page.tsx` (`console.warn` filter). Remove when R3F updates its internals.
-- **Auto-drift vs scroll ownership:** `useAutoDrift` owns `scrollT` until `userHasInteracted` is true, then `useScroll` takes over. On handoff, `useScroll` syncs its accumulator from the store to prevent jumps.
+- **Auto-drift vs scroll ownership:** `useAutoDrift` owns `scrollT` until `userHasInteracted` is true, then `useScroll` takes over. Until then `useScroll` tracks the drifting `scrollT`, so the handoff never jumps.
 - **GLTF clone + skeleton rebind** in `Head.tsx` is required because `useGLTF` caches the scene. Each mount clones and rebinds skeletons manually.
 - **Scene-based culling:** As the camera progresses along the spiral, objects from 2+ scenes away are culled and disabled for optimization. `frustumCulled = false` is only used on the Head meshes (to prevent popping artifacts during the close-up orbit); other scene objects use standard frustum culling.
 
@@ -89,6 +90,6 @@ docs/
 
 ## Deployment Rules
 
-- **"Under development" notice is REQUIRED** after every major phase deployment. This is handled by the `<DevOverlay fromScrollT={...} />` component in `page.tsx`. It blurs the canvas and shows "WORK IN PROGRESS" / "MORE SCENES COMING SOON" once the user scrolls past the last finished scene. **When shipping a new scene**, update the `fromScrollT` prop to the `enterStart` value of the next unfinished scene. When all scenes are done, remove the component.
+- **"Under development" notice is REQUIRED** after every major phase deployment. This is handled by the `<DevOverlay fromScrollT={...} />` component in `page.tsx`. It blurs the canvas and shows the contact end card with "More scenes coming soon" once the user scrolls past the last finished scene. **When shipping a new scene**, update the `fromScrollT` prop to the `enterStart` value of the next unfinished scene. When all scenes are done, remove the component.
 - Always run `npm run build` before deploying to catch errors.
 - Each phase must be independently deployable — no broken UI or dead links to unfinished features (e.g. the CHAT button is greyed out until Phase 3 is live).

@@ -1,34 +1,38 @@
 'use client'
 
-import { useState, useEffect, type CSSProperties } from 'react'
-import { useStore } from '@/store/useStore'
+import { useState, useEffect, type CSSProperties, type ComponentProps } from 'react'
+import { useStore, SCROLL_T_MAX } from '@/store/useStore'
 
 // ─── Personal links ──────────────────────────────────────────────────────────
-const LINKS = {
+export const LINKS = {
   github: 'https://github.com/RiadBsr',
   linkedin: 'https://linkedin.com/in/RiadBsr',
+  email: 'mailto:hello@riadboussoura.com',
   resume: '/resume.pdf',
 }
 
+// Top-right CTAs, in reading order (most important last, nearest the corner)
+const CTAS = [
+  { label: 'GITHUB', href: LINKS.github },
+  { label: 'LINKEDIN', href: LINKS.linkedin },
+  { label: 'EMAIL', href: LINKS.email },
+  { label: 'RESUME', href: LINKS.resume },
+]
+
 // Scene labels and target scrollT values for the right-edge ticker.
-// Values are dwell midpoints from CameraRig TIMELINE.
+// Only finished scenes are listed (plus the end card); add each scene as it ships.
+// Indices must line up with SCENE_BOUNDARIES in useStore so the active one highlights.
 const SCENES = [
-  { label: 'S·0', t: 0 },
-  { label: 'S·1', t: 0.30 },
-  { label: 'S·2', t: 0.47 },
-  { label: 'S·3', t: 0.54 },
-  { label: 'S·4', t: 0.62 },
-  { label: 'S·5', t: 0.70 },
-  { label: 'S·6', t: 0.78 },
-  { label: 'S·7', t: 0.86 },
-  { label: 'S·8', t: 0.95 },
+  { label: 'INTRO', t: 0 },
+  { label: 'GOPRO', t: 0.30 },
+  { label: 'CONTACT', t: SCROLL_T_MAX },
 ]
 
 const mono: CSSProperties = {
   fontFamily: 'var(--font-space-mono, monospace)',
 }
 
-const ctaLink: CSSProperties = {
+export const ctaLink: CSSProperties = {
   ...mono,
   fontSize: '12px',
   letterSpacing: '0.18em',
@@ -45,7 +49,7 @@ export function HUD() {
   const scrollT = useStore((s) => s.scrollT)
   const activeScene = useStore((s) => s.activeScene)
   const chatMode = useStore((s) => s.chatMode)
-  const setScrollT = useStore((s) => s.setScrollT)
+  const scrollTo = useStore((s) => s.scrollTo)
   const setChatMode = useStore((s) => s.setChatMode)
   const pupilDilate = useStore((s) => s.pupilDilate)
   const pupilContract = useStore((s) => s.pupilContract)
@@ -77,7 +81,7 @@ export function HUD() {
     >
       {/* ── Top-left: name (click to return to S-0) ── */}
       <button
-        onClick={() => setScrollT(0)}
+        onClick={() => scrollTo(0)}
         onMouseEnter={pupilDilate}
         onMouseLeave={pupilContract}
         style={{
@@ -112,36 +116,11 @@ export function HUD() {
             pointerEvents: 'auto',
           }}
         >
-          <a
-            href={LINKS.github}
-            target="_blank"
-            rel="noopener noreferrer"
-            onMouseEnter={pupilDilate}
-            onMouseLeave={pupilContract}
-            style={ctaLink}
-          >
-            GITHUB
-          </a>
-          <a
-            href={LINKS.linkedin}
-            target="_blank"
-            rel="noopener noreferrer"
-            onMouseEnter={pupilDilate}
-            onMouseLeave={pupilContract}
-            style={ctaLink}
-          >
-            LINKEDIN
-          </a>
-          <a
-            href={LINKS.resume}
-            target="_blank"
-            rel="noopener noreferrer"
-            onMouseEnter={pupilDilate}
-            onMouseLeave={pupilContract}
-            style={ctaLink}
-          >
-            RESUME
-          </a>
+          {CTAS.map(({ label, href }) => (
+            <CtaLink key={label} href={href} style={ctaLink} onMouseEnter={pupilDilate} onMouseLeave={pupilContract}>
+              {label}
+            </CtaLink>
+          ))}
         </div>
       )}
 
@@ -189,43 +168,18 @@ export function HUD() {
                 padding: '8px',
               }}
             >
-              <a
-                href={LINKS.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                onMouseEnter={pupilDilate}
-                onMouseLeave={pupilContract}
-                style={{ ...ctaLink, textAlign: 'center' }}
-              >
-                GITHUB
-              </a>
-              <a
-                href={LINKS.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                onMouseEnter={pupilDilate}
-                onMouseLeave={pupilContract}
-                style={{ ...ctaLink, textAlign: 'center' }}
-              >
-                LINKEDIN
-              </a>
-              <a
-                href={LINKS.resume}
-                target="_blank"
-                rel="noopener noreferrer"
-                onMouseEnter={pupilDilate}
-                onMouseLeave={pupilContract}
-                style={{ ...ctaLink, textAlign: 'center' }}
-              >
-                RESUME
-              </a>
+              {CTAS.map(({ label, href }) => (
+                <CtaLink key={label} href={href} style={{ ...ctaLink, textAlign: 'center' }}>
+                  {label}
+                </CtaLink>
+              ))}
             </div>
           )}
         </>
       )}
 
-      {/* ── Right edge: scene ticker ── */}
-      <div
+      {/* ── Right edge: scene ticker — desktop only, it covers the scene objects on phones ── */}
+      {!isMobile && <div
         style={{
           position: 'absolute',
           top: '50%',
@@ -241,7 +195,7 @@ export function HUD() {
         {SCENES.map((scene, i) => (
           <button
             key={i}
-            onClick={() => setScrollT(scene.t)}
+            onClick={() => scrollTo(scene.t)}
             onMouseEnter={pupilDilate}
             onMouseLeave={pupilContract}
             style={{
@@ -262,7 +216,7 @@ export function HUD() {
             {scene.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* ── Bottom-left: latent z-coordinate counter ── */}
       <div
@@ -306,4 +260,10 @@ export function HUD() {
       )}
     </div>
   )
+}
+
+// External links open in a new tab; mailto: stays in place (a new tab would just be blank)
+export function CtaLink(props: ComponentProps<'a'> & { href: string }) {
+  const external = !props.href.startsWith('mailto:')
+  return <a target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} {...props} />
 }

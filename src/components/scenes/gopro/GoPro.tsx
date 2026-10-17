@@ -251,18 +251,22 @@ function GoProScene({ lifecycle }: { lifecycle: SceneLifecycleState }) {
         // Hemispheres fully closed
         if (frntRef.current) frntRef.current.position.x = 0
         if (backRef.current) backRef.current.position.x = 0
-
-        if (dwellProgress >= STITCH_START && dwellProgress <= STITCH_END) {
-          // Phase B: stitch sweep — eased blend for satisfying texture transition
-          const stitchT = (dwellProgress - STITCH_START) / (STITCH_END - STITCH_START)
-          mixTUniform.current.value = easeInOut(stitchT)
-        }
       }
     } else {
       // idle or disposed — resting state: hemispheres closed together
       if (frntRef.current) frntRef.current.position.x = 0
       if (backRef.current) backRef.current.position.x = 0
     }
+
+    // Phase B: stitch sweep — eased texture blend. Written every frame (not only
+    // inside the stitch window) so scrolling back up or a fast scroll can't leave it stale.
+    let mixT = 0
+    if (phase === 'dwelling' || phase === 'exiting') {
+      mixT = easeInOut((dwellProgress - STITCH_START) / (STITCH_END - STITCH_START))
+    } else if (phase === 'disposed') {
+      mixT = 1
+    }
+    mixTUniform.current.value = mixT
 
     // Hemisphere wireframe fade — tied to stitch completion
     let wireT = 0

@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useStore } from '@/store/useStore'
-import { smootherstep } from '@/utils/easing'
+import { smoothstep, smootherstep } from '@/utils/easing'
 
 // ─── FOV ramp ─────────────────────────────────────────────────────────────────
 // Start telephoto (tight on head), widen as camera travels through space.
@@ -61,7 +61,7 @@ export const CAMERA_STOPS: CameraStop[] = [
   },
   {
     objectPosition:  new THREE.Vector3(0, 0, 17.5),    // S-1 GoPro
-    mobilePosition:  new THREE.Vector3(0, 0.6, 17.25),  // center-top on mobile
+    mobilePosition:  new THREE.Vector3(2, 0.9, 17.25),  // further out so it fits the narrow portrait FOV; y-lift keeps it above the bottom text
   },
 ]
 
@@ -108,6 +108,17 @@ function scrollToPathT(scrollT: number): number {
   return Math.min(1, Math.max(0, PATH_SEGMENTS[PATH_SEGMENTS.length - 1].pathEnd))
 }
 
+// ─── Portrait focus ─────────────────────────────────────────────────────────
+// Portrait screens have a much narrower horizontal FOV, so the camera's yaw
+// during the S-1 dwell sweeps the GoPro off-screen (its whole animation played
+// out of frame on phones). On portrait only, blend the look direction toward
+// the scene for the dwell. The aim point sits on the horizon (y=0) below the
+// object, so the object's mobile y-lift places it above the bottom text block.
+function portraitFocus(t: number): number {
+  return smoothstep((t - 0.21) / 0.04) * (1 - smoothstep((t - 0.34) / 0.04))
+}
+const _focusAim = new THREE.Vector3(SCENE_MOBILE_POSITIONS[1].x, 0, SCENE_MOBILE_POSITIONS[1].z)
+
 // ─── Chat mode ──────────────────────────────────────────────────────────────
 const CHAT_CAMERA_POSITION = new THREE.Vector3(0.4, 0.1, 2.2)
 const CHAT_LOOK_AT = new THREE.Vector3(0.12, 0, 0)
@@ -118,6 +129,8 @@ const CHAT_LOOK_AT_MOBILE = new THREE.Vector3(0, -0.25, 0)
 const _pos = new THREE.Vector3()
 const _tangent = new THREE.Vector3()
 const _lookAhead = new THREE.Vector3()
+const _lookDir = new THREE.Vector3()
+const _toAim = new THREE.Vector3()
 const _up = new THREE.Vector3(0, 1, 0)
 const _mat = new THREE.Matrix4()
 const _targetQuat = new THREE.Quaternion()
@@ -137,7 +150,8 @@ export function CameraRig() {
     // ── FOV ramp ──
     const aspect = state.size.width / state.size.height
     let baseFov: number
-    if (t <= FOV_RAMP_START) {
+    // Chat camera positions are framed for the telephoto close-up, whatever the scroll position
+    if (chatMode || t <= FOV_RAMP_START) {
       baseFov = FOV_START
     } else if (t >= FOV_RAMP_END) {
       baseFov = FOV_END
@@ -153,7 +167,7 @@ export function CameraRig() {
     }
 
     let targetPos: THREE.Vector3
-    let targetLookAt: THREE.Vector3 | null = null  // null = use tangent
+    let targetLookAt: THREE.Vector3
 
     if (chatMode) {
       const isPortrait = aspect < 1
@@ -165,16 +179,14 @@ export function CameraRig() {
       _curve.getPointAt(pathT, _pos)
       _curve.getTangentAt(pathT, _tangent)
       targetPos = _pos
+      _lookDir.copy(_tangent).negate()
+      const focus = aspect < 1 ? portraitFocus(t) : 0
+      if (focus > 0) _lookDir.lerp(_toAim.copy(_focusAim).sub(_pos).normalize(), focus)
+      targetLookAt = _lookAhead.copy(_pos).add(_lookDir)
     }
 
     // Build target orientation — always through the same quaternion pipeline
-    if (targetLookAt) {
-      _mat.lookAt(targetPos, targetLookAt, _up)
-    } else {
-      // Backward travel: look opposite to tangent direction
-      _lookAhead.copy(targetPos).sub(_tangent)
-      _mat.lookAt(targetPos, _lookAhead, _up)
-    }
+    _mat.lookAt(targetPos, targetLookAt, _up)
     _targetQuat.setFromRotationMatrix(_mat)
 
     // Smooth position
