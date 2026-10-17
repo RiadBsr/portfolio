@@ -432,6 +432,138 @@ Steps 1–3 can be developed and tested independently of the 3D scene. Step 1 is
 
 ---
 
+## Phase 4 — Art Portfolio Gallery (S-7 Scene + `/art` Page)
+
+**Goal:** The outermost ring of the spiral becomes a museum. As the camera reaches ~84% scroll, framed artworks arc into view under low warm spotlights. A "SELECTED WORKS" header floats above them with a "[VIEW FULL GALLERY →]" link. Clicking any frame or the link navigates to a dedicated full-page `/art` gallery — a scrollable, lightboxed grid that lives outside the Canvas. This is the first scene that breaks the single-page model by routing to a real Next.js page.
+
+### Step 1 — Art Asset Manifest
+
+**Files:** `public/art/` (images), `src/lib/artworks.ts`
+
+- Drop artwork images + thumbnails into `public/art/` (e.g. `public/art/thumb/`, `public/art/full/`).
+- `src/lib/artworks.ts` exports a typed array:
+  ```
+  { id: string, title: { en: string, fr: string }, medium: { en: string, fr: string },
+    year: number, thumb: string, full: string }
+  ```
+  Title/medium are localized objects so Phase 5 can read them directly (no schema change later).
+- Single source of truth — both the S-7 scene and the `/art` page import this list.
+
+### Step 2 — ArtGallery Scene (S-7)
+
+**File:** `src/components/scenes/ArtGallery.tsx`
+
+A `<group>` rendered inside the Canvas, positioned at the S-7 scene position. Follows the standard outer-guard / inner-renderer split.
+
+- **Lifecycle:** `useSceneLifecycle({ enterStart: 0.84, enterEnd: 0.88, exitStart: 0.94, disposeAt: 0.99 })`. Return `null` when `shouldMount` is false.
+- **Frames:** 5–8 `BoxGeometry` frames (depth 0.02, slightly wider than 16:9), `MeshStandardMaterial` dark-metal color, arranged in a gentle arc with ±5° X/Z rotation and small depth/Y jitter. Preserve `polygonOffset` on materials per project convention.
+- **Thumbnails:** each frame holds a child drei `<Html>` with an `<img>` from `artworks.ts`, sized to fill the inner frame.
+- **Hover:** `onPointerEnter` → GSAP scale 1 → 1.2 and call `pupilDilate()`; `onPointerLeave` → scale back + `pupilContract()` (ref-counted, per CLAUDE.md). On hover a `<Html>` label appears below the frame with title + medium.
+- **Spotlights:** one low-intensity (0.3) warm-white `PointLight` per frame cluster for museum atmosphere.
+- **Header:** a `<Html>` "SELECTED WORKS" above the gallery, with "[VIEW FULL GALLERY →]" linking to `/art` (use Next `useRouter().push('/art')`).
+- **Click:** `onClick` on a frame → `router.push('/art')` (optionally `?id=<id>` to deep-link the lightbox).
+
+### Step 3 — Scene Position + Camera Marker
+
+**Files:** `src/components/SpiralCamera.tsx` (edit — utility), Blender `CameraPath.glb`
+
+- Add the S-7 entry to `SCENE_POSITIONS` (and any focal-point export) so `ArtGallery.tsx` knows where to place itself in world space. Keep objects **stationary in world space** — the camera travels through them (per [[feedback_scene_objects_static]]).
+- Since the camera is now Blender-path-driven (`CameraPath.tsx` + `CameraPath.glb`), ensure the baked path actually reaches the S-7 region and `SCROLL_FRAME_MAP` allocates a dwell window around 0.84–0.94. If the path doesn't extend that far yet, extend the curve at the end only (existing frames stay identical, per BLENDER_GUIDE workflow).
+
+### Step 4 — `/art` Full-Page Gallery
+
+**File:** `src/app/art/page.tsx`
+
+A standard DOM page (no Canvas), dark theme matching the design tokens.
+
+- Responsive grid of artwork cards from `artworks.ts` (thumbnails).
+- Click a card → lightbox overlay showing the full image + title/medium/year; ESC / backdrop click closes. Honor `?id=` query param to open directly.
+- A "[← BACK]" link returning to `/` (`router.push('/')` or `<Link href="/">`).
+- **Gotcha:** `globals.css` sets `overflow: hidden` on `body` for the SPA. The `/art` page needs vertical scrolling — give it a route-group layout (e.g. `src/app/art/layout.tsx`) that re-enables `overflow: auto`/`height: auto`, or a scroll container that overrides the global rule. Verify the home page scroll/Lenis behavior is unaffected.
+
+### Step 5 — Wire-Up
+
+**Files:** `src/app/page.tsx` (edit), `src/components/HUD.tsx` (edit)
+
+- Mount `<ArtGallery />` inside the Canvas alongside the other scenes.
+- Add "Art Gallery" / S-7 to the HUD scene ticker; optionally add a persistent "[ART]" CTA in the HUD linking to `/art`.
+- **DevOverlay:** once S-7 ships, bump `<DevOverlay fromScrollT={...} />` to the next unfinished scene's `enterStart` (or remove it if S-7/S-8 are the last). Run `npm run build`.
+
+### Phase 4 Verification Checklist
+
+- [ ] Scrolling to ~84%, framed artworks arc into view with spotlights
+- [ ] Hover scales a frame to 1.2 and shows its title/medium label; pupil dilates
+- [ ] "[VIEW FULL GALLERY →]" and frame clicks navigate to `/art`
+- [ ] `/art` renders a scrollable grid; lightbox opens/closes; `?id=` deep-links
+- [ ] "[← BACK]" returns to `/` with the spiral scene intact (Lenis/scroll still works)
+- [ ] `/art` scrolls vertically despite the global `overflow: hidden` on body
+- [ ] Scene disposes after navigation / past 99% (React cleanup log fires)
+- [ ] Mobile: frames and `/art` grid are readable and tappable
+- [ ] `npm run build` succeeds
+
+---
+
+## Phase 5 — French Language Version (i18n)
+
+**Goal:** A bilingual portfolio. A small `EN | FR` toggle in the HUD switches every visible string — HUD labels, annotations, scene text panels, art labels, CTAs, and the AI chat persona — between English and French. The site is a single-page client app, so this is a lightweight in-app i18n (a translation dictionary + a store-driven locale) rather than Next.js locale routing.
+
+### Step 1 — Locale State
+
+**File:** `src/store/useStore.ts` (edit)
+
+- Add `locale: 'en' | 'fr'` and `setLocale(l)`.
+- Initialize from `localStorage` if present, else from `navigator.language` (`fr*` → `'fr'`, else `'en'`); persist back to `localStorage` on change.
+
+### Step 2 — Translation Dictionary
+
+**File:** `src/lib/i18n.ts`
+
+- Export a nested `translations` object keyed by locale: `{ en: {...}, fr: {...} }` with the same key shape.
+- Cover every UI string: HUD (name tagline, CV/Chat/Art CTAs, scene ticker labels), S-0 annotations, each scene's text panel (GoPro headline/subtext/links, future scenes), ArtGallery header + "view full gallery", Conversion CTAs + tagline, DevOverlay text.
+- Keep keys flat-ish and scene-scoped (e.g. `hud.cv`, `scene.gopro.headline`).
+
+### Step 3 — Translation Hook
+
+**File:** `src/hooks/useTranslation.ts`
+
+- `'use client'` hook reading `locale` from the store and returning `t(key: string): string` (dot-path lookup into `translations[locale]`, falling back to `en` then the key itself).
+- Also expose `locale` for components that need it directly (e.g. the chat call).
+
+### Step 4 — Replace Hardcoded Strings
+
+**Files (edit):** `HUD.tsx`, `Annotations.tsx`, `scenes/GoPro.tsx` (+ future scene panels), `scenes/ArtGallery.tsx`, `DevOverlay.tsx`, and any scene's `<Html>` text panel.
+
+- Swap literal strings for `t('...')`. Artwork titles/mediums come from the localized fields added in Phase 4 Step 1 (`title[locale]`, `medium[locale]`).
+- Keep the **no-emoji / ASCII-only** rule (CLAUDE.md) — note French accented characters (é, à, ç…) are allowed Latin text and required for correct copy; only emojis/symbols are banned.
+
+### Step 5 — Localize the Chat Persona
+
+**Files:** `src/lib/systemPrompt.ts` (edit), `src/app/api/chat/route.ts` (edit), `src/hooks/useChat.ts` (edit)
+
+- Pass the current `locale` in the `/api/chat` request body.
+- In the route, append a language instruction to the system prompt ("Respond in French." when `locale === 'fr'`), or maintain `systemPromptEn` / `systemPromptFr`. The CV facts can stay shared; only the voice/instruction switches.
+- Localize ChatScreen UI strings (header, placeholder, prompt chips) via `t(...)` as well.
+
+### Step 6 — Language Toggle + `<html lang>`
+
+**Files:** `src/components/HUD.tsx` (edit), `src/app/layout.tsx` / `src/app/page.tsx` (edit)
+
+- Add an `EN | FR` toggle in the HUD (Space Mono, design tokens) calling `setLocale`. Highlight the active locale.
+- On locale change, set `document.documentElement.lang` so the `<html lang>` attribute is correct for SEO/accessibility. (Static `metadata` stays English; the app is client-rendered.)
+
+### Phase 5 Verification Checklist
+
+- [ ] `EN | FR` toggle visible in the HUD; active locale highlighted
+- [ ] Switching to FR translates HUD, annotations, scene panels, art labels, CTAs
+- [ ] Locale persists across reload (localStorage) and respects `navigator.language` on first visit
+- [ ] Chat responds in French when FR is active; ChatScreen UI is translated
+- [ ] French accented characters render correctly; no emojis introduced
+- [ ] `document.documentElement.lang` updates with the toggle
+- [ ] No layout breakage from longer French strings (FR text is often ~20% longer)
+- [ ] `npm run build` succeeds
+
+---
+
 ## File Summary
 
 ### New Files
@@ -451,6 +583,12 @@ Steps 1–3 can be developed and tested independently of the 3D scene. Step 1 is
 | `src/hooks/useChat.ts` | 3 | Chat state + streaming |
 | `src/components/ChatScreen.tsx` | 3 | Chat HTML interface |
 | `src/components/Tablet.tsx` | 3 | 3D tablet + embedded chat |
+| `src/lib/artworks.ts` | 4 | Art asset manifest (localized titles) |
+| `src/components/scenes/ArtGallery.tsx` | 4 | S-7 Art Gallery scene (3D) |
+| `src/app/art/page.tsx` | 4 | Full-page art gallery (HTML) |
+| `src/app/art/layout.tsx` | 4 | Route layout re-enabling page scroll |
+| `src/lib/i18n.ts` | 5 | EN/FR translation dictionary |
+| `src/hooks/useTranslation.ts` | 5 | Locale-aware `t()` hook |
 
 ### Edited Files
 
@@ -458,10 +596,17 @@ Steps 1–3 can be developed and tested independently of the 3D scene. Step 1 is
 |---|---|---|
 | `src/app/layout.tsx` | 1 | Add Space Mono, Bebas Neue, DM Sans fonts |
 | `src/app/globals.css` | 1 | Add storyboard design tokens |
-| `src/app/page.tsx` | 1, 2, 3 | Rewrite camera prop, remove Center/overlay, mount all new components |
-| `src/components/SpiralCamera.tsx` | 2, 3 | Add scene focal points (P2), chat camera lerp (P3) |
-| `src/store/useStore.ts` | 3 | Add chat-related state if needed |
-| `src/components/HUD.tsx` | 3 | Enable chat button, ESC handler, mobile button |
+| `src/app/page.tsx` | 1, 2, 3, 4 | Camera prop rewrite, mount all scenes incl. `<ArtGallery />` (P4) |
+| `src/components/SpiralCamera.tsx` | 2, 3, 4 | Scene focal points (P2), chat lerp (P3), S-7 position (P4) |
+| `src/store/useStore.ts` | 3, 5 | Chat state (P3), `locale`/`setLocale` (P5) |
+| `src/components/HUD.tsx` | 3, 4, 5 | Chat button/ESC (P3), S-7 ticker + Art CTA (P4), EN/FR toggle + `t()` (P5) |
+| `src/components/Annotations.tsx` | 5 | Replace strings with `t()` |
+| `src/components/scenes/GoPro.tsx` | 5 | Localize text panel via `t()` |
+| `src/components/DevOverlay.tsx` | 4, 5 | Bump `fromScrollT` (P4), localize text (P5) |
+| `src/lib/systemPrompt.ts` | 5 | Locale-aware persona / FR instruction |
+| `src/app/api/chat/route.ts` | 5 | Accept `locale`, switch response language |
+| `src/hooks/useChat.ts` | 5 | Send `locale` in request body |
+| `src/app/layout.tsx` | 5 | Sync `<html lang>` on locale change |
 
 ### Unchanged Files
 
