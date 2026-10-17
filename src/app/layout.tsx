@@ -36,9 +36,17 @@ export const viewport: Viewport = {
   themeColor: '#050505',
 }
 
+const title = "Riad Boussoura - AI & Computer Vision Engineer";
+const description =
+  "AI & Computer Vision engineer in Paris. Interactive 3D portfolio: Sim-to-Real 360° stitching at GoPro, synthetic data in Blender, PyTorch, and an AI clone you can talk to.";
+
+// og:image comes from the opengraph-image.png file convention next to this layout
 export const metadata: Metadata = {
-  title: "Riad Boussoura - Portfolio",
-  description: "A showcase of my work and projects.",
+  metadataBase: new URL("https://riadboussoura.com"),
+  title,
+  description,
+  openGraph: { title, description, url: "/", siteName: "Riad Boussoura", type: "website" },
+  twitter: { card: "summary_large_image", title, description },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

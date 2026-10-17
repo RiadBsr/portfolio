@@ -63,7 +63,7 @@ export function IntroOverlay() {
           font-family: var(--font-space-mono, monospace);
           font-size: clamp(11px, 1.1vw, 14px);
           letter-spacing: 0.3em;
-          color: rgba(255,255,255,0.42);
+          color: rgba(255,255,255,0.62);
           margin: 0;
           text-transform: uppercase;
         }
@@ -113,7 +113,7 @@ export function IntroOverlay() {
               style={{ WebkitMaskImage: boussouraMask, maskImage: boussouraMask }}
             >BOUSSOURA</span>
           </h1>
-          <p className="intro-sub">Scroll to discover my journey</p>
+          <p className="intro-sub">AI &amp; Computer Vision Engineer // Paris</p>
         </div>
 
         {/* Scroll cue */}

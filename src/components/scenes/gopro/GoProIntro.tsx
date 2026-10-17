@@ -94,7 +94,7 @@ export function GoProIntro() {
 
       <div className="gopro-intro-outer" style={{ opacity }}>
         <div className="gopro-intro-block">
-          <p className="gopro-intro-tag">Project 01 // GoPro MAX</p>
+          <p className="gopro-intro-tag">Project 01 // GoPro R&amp;D // 2025</p>
           <h2 className="gopro-intro-title">
             360° IMAGE
             <br />
@@ -102,10 +102,14 @@ export function GoProIntro() {
           </h2>
           <hr className="gopro-intro-rule" />
           <p className="gopro-intro-desc">
-            Two fisheye lenses capture overlapping hemispheres
-            of the world. Aligning and blending them into a
-            seamless equirectangular panorama is the core
-            challenge of 360 photography.
+            Two fisheye lenses, one visible seam. I built a
+            Sim-to-Real deep learning pipeline to close it: a
+            procedural Blender engine renders photorealistic
+            training scenes with exact ground truth, and a custom
+            PyTorch model learns the alignment. It beat the
+            production baseline and cut processing time by more
+            than 50%. The street scene on the sphere is one of
+            my own Blender renders.
           </p>
         </div>
       </div>
